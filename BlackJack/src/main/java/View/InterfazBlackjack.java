@@ -3,13 +3,13 @@ package View;
 import Controller.BlackjackService;
 import entidades.Carta;
 import entidades.Jugador;
+import entidades.ManoJugador;
 import entidades.Partida;
 import javax.swing.*;
 import java.awt.*;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
-import java.time.LocalDateTime;
 
 public class InterfazBlackjack extends JFrame {
 
@@ -40,12 +40,6 @@ public class InterfazBlackjack extends JFrame {
     private JLabel lblCartasBanca, lblSumaBanca;
     private int dineroJugador = 100; // Dinero inicial jugador
     private int apuestaActual = 0; // Apuesta actual
-
-    // Variables para guardar partida
-    private ArrayList<Integer> savedManoJugador;
-    private ArrayList<Integer> savedManoBanca;
-    private int savedDineroJugador;
-    private int savedApuestaActual;
 
     public InterfazBlackjack() {
         blackjackService = new BlackjackService();
@@ -188,7 +182,6 @@ public class InterfazBlackjack extends JFrame {
         });
     }
 
-    // Menu de juego con opciones Nueva Partida, Continuar Partida y Salir
     private void crearMenuJuego() {
         JPanel menuJuego = new JPanel(new GridLayout(3, 1, 10, 10));
 
@@ -217,23 +210,43 @@ public class InterfazBlackjack extends JFrame {
                 JOptionPane.showMessageDialog(this, "Debe iniciar sesión primero.");
                 return;
             }
+
             List<Partida> partidas = blackjackService.listarPartidasPorJugador(jugador.getIdJugador());
             if (partidas.isEmpty()) {
                 JOptionPane.showMessageDialog(this, "No hay partida para continuar.");
                 return;
             }
 
-            // Por simplicidad, cargar la última partida guardada
             Partida ultimaPartida = partidas.get(partidas.size() - 1);
 
-            // Aquí tienes que traducir los datos de la partida a las variables locales
-            dineroJugador = ultimaPartida.getDineroCambiado();
-            apuestaActual = ultimaPartida.getMontoApostado();
+            // Usar dinero actual del jugador y apuesta de la partida
+            dineroJugador = jugador.getDinero();
+            apuestaActual = ultimaPartida.getTotalApostado();
 
-            // Las cartas las deberías guardar como relación o serializar y deserializar
-            // Para empezar, puedes simplemente resetear manos o hacer un sistema de guardado más completo
+            // Cargar las manos guardadas (cartas del jugador y banca) desde ManoJugador
+            List<ManoJugador> manos = blackjackService.cargarManosDePartida(ultimaPartida.getIdPartida());
+
+            manoJugador = new ArrayList<>();
+            manoBanca = new ArrayList<>();
+
+            for (ManoJugador mano : manos) {
+                int valorCarta = mano.getCarta().getValor() > 10 ? 10 : mano.getCarta().getValor();
+                if (mano.isEs_jugador()) {
+                    manoJugador.add(valorCarta);
+                } else {
+                    manoBanca.add(valorCarta);
+                }
+            }
+
+            // Actualizar interfaz
             lblDinero.setText("Dinero disponible: " + dineroJugador);
             lblApuesta.setText("Apuesta: " + apuestaActual);
+
+            lblCartasJugador.setText("Cartas jugador: " + manoJugador);
+            actualizarSuma(manoJugador, lblSumaJugador);
+
+            lblCartasBanca.setText("Cartas banca: " + manoBanca);
+            actualizarSuma(manoBanca, lblSumaBanca);
 
             cardLayout.show(panelPrincipal, "MesaJuego");
             btnGuardarPartida.setVisible(true);
@@ -515,7 +528,6 @@ public class InterfazBlackjack extends JFrame {
 
     // Dentro de InterfazBlackjack.java
     private void guardarPartida() {
-        // 1) Buscar jugador
         String nombreUsuario = txtUsuarioLogin.getText();
         Jugador jugador = blackjackService.buscarJugadorPorNombre(nombreUsuario);
         if (jugador == null) {
@@ -523,30 +535,23 @@ public class InterfazBlackjack extends JFrame {
             return;
         }
 
-        // 2) Validar apuesta
-        if (apuestaActual <= 0) {
-            JOptionPane.showMessageDialog(this, "La cantidad apostada debe ser mayor que cero.");
-            return;
-        }
-
-        // 3) Calcular resultado y diferencia de dinero
-        String resultado = calcularResultado();
         int dineroAntes = jugador.getDinero();
         int dineroDespues = dineroJugador;
         int dineroCambiado = dineroDespues - dineroAntes;
 
         try {
-            // 4) Llamar al servicio para guardar TODO en BD
+            // Como manoJugador y manoBanca son ArrayList<Integer>, copiamos directamente
+            List<Integer> manoJugadorValores = new ArrayList<>(manoJugador);
+            List<Integer> manoBancaValores = new ArrayList<>(manoBanca);
+
             blackjackService.guardarPartidaCompleta(
                     jugador,
                     apuestaActual,
-                    resultado,
                     dineroCambiado,
-                    new ArrayList<>(manoJugador), // vals de la mano del jugador
-                    new ArrayList<>(manoBanca) // vals de la mano de la banca
+                    manoJugadorValores,
+                    manoBancaValores
             );
 
-            // 5) Mensaje de éxito
             JOptionPane.showMessageDialog(this, "Partida guardada correctamente.");
 
         } catch (Exception ex) {
@@ -555,16 +560,18 @@ public class InterfazBlackjack extends JFrame {
             return;
         }
 
-        // 6) Preguntar si quiere volver al menú o seguir jugando
         int opcion = JOptionPane.showConfirmDialog(
                 this,
-                "¿Quieres salir al menú o continuar jugando?\nSí: Salir al menú\nNo: Continuar jugando",
+                "¿Quieres salir al menú o continuar jugando?\n"
+                + "Sí: Salir al menú\nNo: Continuar jugando",
                 "Continuar o salir",
                 JOptionPane.YES_NO_OPTION
         );
+
         if (opcion == JOptionPane.YES_OPTION) {
             cardLayout.show(panelPrincipal, "MenuJuego");
             btnGuardarPartida.setVisible(false);
+            reiniciarManos();
         }
     }
 

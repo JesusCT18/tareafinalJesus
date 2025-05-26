@@ -22,9 +22,11 @@ CREATE TABLE Partidas (
     id_partida INT PRIMARY KEY AUTO_INCREMENT,
     id_jugador INT NOT NULL,
     fecha DATETIME DEFAULT CURRENT_TIMESTAMP,
-    resultado VARCHAR(50), 
-    monto_apostado INT NOT NULL, 
-    dinero_cambiado INT NOT NULL, 
+    total_apostado INT DEFAULT 0,
+    total_ganado INT DEFAULT 0,
+    total_perdido INT DEFAULT 0,
+    dinero_actual INT DEFAULT 0,
+    estado VARCHAR(50) DEFAULT 'En curso',
     FOREIGN KEY (id_jugador) REFERENCES Jugadores(id_jugador) ON DELETE CASCADE
 );
 
@@ -61,4 +63,6 @@ CREATE TABLE ManoJugador (
     FOREIGN KEY (id_jugador) REFERENCES Jugadores(id_jugador) ON DELETE CASCADE,
     FOREIGN KEY (id_carta) REFERENCES Cartas(id_carta) ON DELETE CASCADE
 );
+
+
 

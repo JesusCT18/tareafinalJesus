@@ -1,6 +1,7 @@
 package entidades;
 
 import entidades.Partida;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import javax.persistence.CascadeType;
@@ -21,7 +22,7 @@ public class Jugador {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_jugador")
     private int idJugador;
-    
+
     @Column(nullable = false)
     private String nombre;
 
@@ -37,6 +38,7 @@ public class Jugador {
     // Constructor vacio requerido por JPA
     public Jugador() {
         this.dinero = 100; // Valor por defecto inicial
+        this.partidas = new ArrayList<>(); // inicializa lista para evitar NullPointerException
     }
 
     // Constructor con parámetros (sin id, porque se genera automáticamente)

@@ -4,7 +4,6 @@ import entidades.Carta;
 import entidades.ManoJugador;
 import entidades.Jugador;
 import entidades.Partida;
-import entidades.Ronda;
 import javax.persistence.*;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -67,7 +66,6 @@ public class BlackjackService {
     public void guardarPartidaCompleta(
             Jugador jugador,
             int montoApostado,
-            String resultado,
             int dineroCambiado,
             List<Integer> manoJugadorValores,
             List<Integer> manoBancaValores
@@ -76,62 +74,78 @@ public class BlackjackService {
         try {
             tx.begin();
 
-            // 1) Crear y persistir Partida
-            Partida partida = new Partida();
-            partida.setJugador(jugador);
-            partida.setFecha(LocalDateTime.now());
-            partida.setResultado(resultado);
-            partida.setMontoApostado(montoApostado);
-            partida.setDineroCambiado(dineroCambiado);
-            partida.setEstado("ABIERTA");
-            partida.setUltimaRonda(1);  // arrancamos en la ronda 1
-            em.persist(partida);
-            em.flush(); // para asegurarnos que partida tiene id
+            jugador = em.find(Jugador.class, jugador.getIdJugador());
 
-            // 2) Crear y persistir Ronda #1
-            Ronda ronda = new Ronda();
-            ronda.setPartida(partida);
-            ronda.setNumeroRonda(1);
-            em.persist(ronda);
-            em.flush();
+            // Buscar partida abierta
+            Partida partida = buscarPartidaAbierta(jugador);
 
-            // 3) Para cada valor de carta, buscar una Carta en la BD y persistir ManoJugador
-            //    usando es_jugador = true para manoJugador, false para banca
+            if (partida == null) {
+                // Si no hay partida abierta, crear una nueva
+                partida = new Partida();
+                partida.setJugador(jugador);
+                jugador.getPartidas().add(partida);
+                partida.setFecha(LocalDateTime.now());
+                partida.setEstado("En curso");
+                partida.setTotalApostado(0);
+                partida.setTotalGanado(0);
+                partida.setTotalPerdido(0);
+                partida.setDineroActual(jugador.getDinero());
+                em.persist(partida);
+                em.flush(); // para generar idPartida
+            }
+
+            // Acumular valores en la partida existente
+            partida.setTotalApostado(partida.getTotalApostado() + montoApostado);
+
+            if (dineroCambiado >= 0) {
+                partida.setTotalGanado(partida.getTotalGanado() + dineroCambiado);
+            } else {
+                partida.setTotalPerdido(partida.getTotalPerdido() + (-dineroCambiado));
+            }
+
+            int dineroFinal = jugador.getDinero() + dineroCambiado;
+            partida.setDineroActual(dineroFinal);
+
+            // Si quieres puedes cambiar el estado si ya se finalizó la partida, aquí lo dejo así:
+            // partida.setEstado("Finalizada"); // solo si es el cierre de la partida
+            // Guardar cartas (igual que antes)
             String jpqlCarta = "SELECT c FROM Carta c WHERE c.valor = :v";
-            for (int val : manoJugadorValores) {
-                Carta c = em.createQuery(jpqlCarta, Carta.class)
-                        .setParameter("v", Math.min(val, 10))
-                        .setMaxResults(1)
-                        .getSingleResult();
-                ManoJugador mj = new ManoJugador();
-                mj.setPartida(partida);
-                mj.setRonda(ronda);
-                mj.setJugador(jugador);
-                mj.setCarta(c);
-                mj.setEs_jugador(true);
-                em.persist(mj);
-            }
-            for (int val : manoBancaValores) {
-                Carta c = em.createQuery(jpqlCarta, Carta.class)
-                        .setParameter("v", Math.min(val, 10))
-                        .setMaxResults(1)
-                        .getSingleResult();
-                ManoJugador mj = new ManoJugador();
-                mj.setPartida(partida);
-                mj.setRonda(ronda);
-                mj.setJugador(jugador);
-                mj.setCarta(c);
-                mj.setEs_jugador(false);
-                em.persist(mj);
+
+            if (manoJugadorValores != null && !manoJugadorValores.isEmpty()) {
+                for (int val : manoJugadorValores) {
+                    Carta carta = em.createQuery(jpqlCarta, Carta.class)
+                            .setParameter("v", Math.min(val, 10))
+                            .setMaxResults(1)
+                            .getSingleResult();
+
+                    ManoJugador manoJugador = new ManoJugador();
+                    manoJugador.setPartida(partida);
+                    manoJugador.setJugador(jugador);
+                    manoJugador.setCarta(carta);
+                    manoJugador.setEs_jugador(true);
+                    em.persist(manoJugador);
+                }
             }
 
-            // 4) Actualizar dinero del jugador
-            jugador.setDinero(jugador.getDinero() + dineroCambiado);
+            if (manoBancaValores != null && !manoBancaValores.isEmpty()) {
+                for (int val : manoBancaValores) {
+                    Carta carta = em.createQuery(jpqlCarta, Carta.class)
+                            .setParameter("v", Math.min(val, 10))
+                            .setMaxResults(1)
+                            .getSingleResult();
+
+                    ManoJugador manoBanca = new ManoJugador();
+                    manoBanca.setPartida(partida);
+                    manoBanca.setJugador(jugador);
+                    manoBanca.setCarta(carta);
+                    manoBanca.setEs_jugador(false);
+                    em.persist(manoBanca);
+                }
+            }
+
+            jugador.setDinero(dineroFinal);
             em.merge(jugador);
-
-            // 5) Actualizar última ronda en Partida (ya fue la ronda 1)
-            partida.setUltimaRonda(1);
-            em.merge(partida);
+            em.merge(partida);  // actualizar partida
 
             tx.commit();
         } catch (Exception e) {
@@ -142,20 +156,17 @@ public class BlackjackService {
         }
     }
 
-    // Cargar partida completa con mano y cartas, dado el id de la partida
     public Partida cargarPartidaCompleta(int idPartida) {
         Partida partida = em.find(Partida.class, idPartida);
-        if (partida != null) {
-            // Cargar todas las manos asociadas a la partida
-            TypedQuery<ManoJugador> queryManos = em.createQuery(
-                    "SELECT m FROM ManoJugador m WHERE m.partida.idPartida = :idPartida", ManoJugador.class);
-            queryManos.setParameter("idPartida", idPartida);
-            List<ManoJugador> manos = queryManos.getResultList();
-
-            // Asignar las manos a la partida para que tenga todas las manos con cartas
-            partida.setManosJugador(manos);  // O como se llame tu lista en la entidad Partida
-        }
+        // No asignamos listas de manos a la partida (porque no existe el atributo)
         return partida;
+    }
+
+    public List<ManoJugador> cargarManosDePartida(int idPartida) {
+        TypedQuery<ManoJugador> queryManos = em.createQuery(
+                "SELECT m FROM ManoJugador m WHERE m.partida.idPartida = :idPartida", ManoJugador.class);
+        queryManos.setParameter("idPartida", idPartida);
+        return queryManos.getResultList();
     }
 
     // Listar partidas de un jugador

@@ -6,7 +6,7 @@ import java.util.Objects;
 import javax.persistence.*;
 
 @Entity
-@Table(name = "ManosJugador")
+@Table(name = "ManoJugador")
 public class ManoJugador {
 
     @Id
@@ -120,7 +120,5 @@ public class ManoJugador {
             return false;
         }
         return Objects.equals(this.carta, other.carta);
-    }
-
-    
+    } 
 }

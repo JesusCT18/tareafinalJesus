@@ -2,7 +2,6 @@ package entidades;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Objects;
 
 @Entity
@@ -11,44 +10,39 @@ public class Partida {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id_partida") // usa el nombre exacto de la columna en la BD
     private int idPartida;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_jugador", nullable = false)
     private Jugador jugador;
 
-    @Column(nullable = false)
+    @Column(name = "fecha", nullable = false)
     private LocalDateTime fecha;
 
-    @Column(nullable = false)
-    private String resultado;
+    @Column(name = "total_apostado", nullable = false)
+    private int totalApostado;
 
-    @Column(nullable = false)
-    private int montoApostado;
+    @Column(name = "total_ganado", nullable = false)
+    private int totalGanado = 0;
 
-    @Column(nullable = false)
-    private int dineroCambiado;
+    @Column(name = "total_perdido", nullable = false)
+    private int totalPerdido = 0;
 
-    @Column(nullable = false)
-    private String estado = "ABIERTA";  
+    @Column(name = "dinero_actual", nullable = false)
+    private int dineroActual = 0;
 
-    @Column(nullable = false)
-    private int ultimaRonda = 0;   
-    
-    @OneToMany(mappedBy = "partida", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<ManoJugador> manosJugador;
+    @Column(name = "estado", nullable = false)
+    private String estado = "En curso";
 
     public Partida() {
     }
 
-    public Partida(int idPartida, Jugador jugador, LocalDateTime fecha, String resultado, int montoApostado, int dineroCambiado, List<ManoJugador> manosJugador) {
+    public Partida(int idPartida, Jugador jugador, LocalDateTime fecha, int totalApostado) {
         this.idPartida = idPartida;
         this.jugador = jugador;
         this.fecha = fecha;
-        this.resultado = resultado;
-        this.montoApostado = montoApostado;
-        this.dineroCambiado = dineroCambiado;
-        this.manosJugador = manosJugador;
+        this.totalApostado = totalApostado;
     }
 
     public int getIdPartida() {
@@ -75,28 +69,36 @@ public class Partida {
         this.fecha = fecha;
     }
 
-    public String getResultado() {
-        return resultado;
+    public int getTotalApostado() {
+        return totalApostado;
     }
 
-    public void setResultado(String resultado) {
-        this.resultado = resultado;
+    public void setTotalApostado(int totalApostado) {
+        this.totalApostado = totalApostado;
     }
 
-    public int getMontoApostado() {
-        return montoApostado;
+    public int getTotalGanado() {
+        return totalGanado;
     }
 
-    public void setMontoApostado(int montoApostado) {
-        this.montoApostado = montoApostado;
+    public void setTotalGanado(int totalGanado) {
+        this.totalGanado = totalGanado;
     }
 
-    public int getDineroCambiado() {
-        return dineroCambiado;
+    public int getTotalPerdido() {
+        return totalPerdido;
     }
 
-    public void setDineroCambiado(int dineroCambiado) {
-        this.dineroCambiado = dineroCambiado;
+    public void setTotalPerdido(int totalPerdido) {
+        this.totalPerdido = totalPerdido;
+    }
+
+    public int getDineroActual() {
+        return dineroActual;
+    }
+
+    public void setDineroActual(int dineroActual) {
+        this.dineroActual = dineroActual;
     }
 
     public String getEstado() {
@@ -107,39 +109,22 @@ public class Partida {
         this.estado = estado;
     }
 
-    public int getUltimaRonda() {
-        return ultimaRonda;
-    }
-
-    public void setUltimaRonda(int ultimaRonda) {
-        this.ultimaRonda = ultimaRonda;
-    }
-
-    public List<ManoJugador> getManosJugador() {
-        return manosJugador;
-    }
-
-    public void setManosJugador(List<ManoJugador> manosJugador) {
-        this.manosJugador = manosJugador;
-    }
-
     @Override
     public String toString() {
-        return "Partida{" + "idPartida=" + idPartida + ", jugador=" + jugador + ", fecha=" + fecha + ", resultado=" + resultado + ", montoApostado=" + montoApostado + ", dineroCambiado=" + dineroCambiado + ", estado=" + estado + ", ultimaRonda=" + ultimaRonda + ", manosJugador=" + manosJugador + '}';
+        return "Partida{" + "idPartida=" + idPartida + ", jugador=" + jugador + ", fecha=" + fecha + ", totalApostado=" + totalApostado + ", totalGanado=" + totalGanado + ", totalPerdido=" + totalPerdido + ", dineroActual=" + dineroActual + ", estado=" + estado + '}';
     }
 
     @Override
     public int hashCode() {
-        int hash = 7;
-        hash = 53 * hash + this.idPartida;
-        hash = 53 * hash + Objects.hashCode(this.jugador);
-        hash = 53 * hash + Objects.hashCode(this.fecha);
-        hash = 53 * hash + Objects.hashCode(this.resultado);
-        hash = 53 * hash + this.montoApostado;
-        hash = 53 * hash + this.dineroCambiado;
-        hash = 53 * hash + Objects.hashCode(this.estado);
-        hash = 53 * hash + this.ultimaRonda;
-        hash = 53 * hash + Objects.hashCode(this.manosJugador);
+        int hash = 3;
+        hash = 11 * hash + this.idPartida;
+        hash = 11 * hash + Objects.hashCode(this.jugador);
+        hash = 11 * hash + Objects.hashCode(this.fecha);
+        hash = 11 * hash + this.totalApostado;
+        hash = 11 * hash + this.totalGanado;
+        hash = 11 * hash + this.totalPerdido;
+        hash = 11 * hash + this.dineroActual;
+        hash = 11 * hash + Objects.hashCode(this.estado);
         return hash;
     }
 
@@ -158,16 +143,16 @@ public class Partida {
         if (this.idPartida != other.idPartida) {
             return false;
         }
-        if (this.montoApostado != other.montoApostado) {
+        if (this.totalApostado != other.totalApostado) {
             return false;
         }
-        if (this.dineroCambiado != other.dineroCambiado) {
+        if (this.totalGanado != other.totalGanado) {
             return false;
         }
-        if (this.ultimaRonda != other.ultimaRonda) {
+        if (this.totalPerdido != other.totalPerdido) {
             return false;
         }
-        if (!Objects.equals(this.resultado, other.resultado)) {
+        if (this.dineroActual != other.dineroActual) {
             return false;
         }
         if (!Objects.equals(this.estado, other.estado)) {
@@ -176,9 +161,7 @@ public class Partida {
         if (!Objects.equals(this.jugador, other.jugador)) {
             return false;
         }
-        if (!Objects.equals(this.fecha, other.fecha)) {
-            return false;
-        }
-        return Objects.equals(this.manosJugador, other.manosJugador);
+        return Objects.equals(this.fecha, other.fecha);
     }
+
 }
