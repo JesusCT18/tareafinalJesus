@@ -87,12 +87,13 @@ public class InterfazBlackjack extends JFrame {
 
     // Pantalla de login con usuario, contraseña y boton aceptar
     private void crearPantallaLogin() {
-        JPanel loginPanel = new JPanel(new GridLayout(6, 1, 5, 5));
+        JPanel loginPanel = new JPanel(new GridLayout(7, 1, 5, 5)); // Actualizamos filas (ahora 7 en vez de 6)
 
         txtUsuarioLogin = new JTextField();
         txtPasswordLogin = new JPasswordField();
         chkMostrarContraseñaLogin = new JCheckBox("Mostrar Contraseña");
         JButton btnAceptarLogin = new JButton("Aceptar");
+        JButton btnCancelarLogin = new JButton("Cancelar");  // Botón de cancelar
 
         loginPanel.add(new JLabel("Usuario:"));
         loginPanel.add(txtUsuarioLogin);
@@ -100,10 +101,11 @@ public class InterfazBlackjack extends JFrame {
         loginPanel.add(txtPasswordLogin);
         loginPanel.add(chkMostrarContraseñaLogin);
         loginPanel.add(btnAceptarLogin);
+        loginPanel.add(btnCancelarLogin);  // Agregamos el botón de cancelar al panel
 
         panelPrincipal.add(loginPanel, "Login");
 
-        // Mostrar u ocultar contraseña segun checkbox
+        // Mostrar u ocultar contraseña
         chkMostrarContraseñaLogin.addActionListener(e -> {
             if (chkMostrarContraseñaLogin.isSelected()) {
                 txtPasswordLogin.setEchoChar((char) 0);
@@ -112,31 +114,36 @@ public class InterfazBlackjack extends JFrame {
             }
         });
 
-        // Al aceptar, se va al menu de juego (aqui podria validarse usuario)
+        // Acción del botón Aceptar (mantiene la lógica actual)
         btnAceptarLogin.addActionListener(e -> {
             String usuario = txtUsuarioLogin.getText();
             String contraseña = new String(txtPasswordLogin.getPassword());
 
             Jugador jugador = blackjackService.buscarJugadorPorNombre(usuario);
             if (jugador != null && jugador.getContraseña().equals(contraseña)) {
-                // Login correcto: carga dinero, historial, etc. si quieres
-                dineroJugador = jugador.getDinero();  // Asumiendo que el Jugador tiene dinero
+                dineroJugador = jugador.getDinero();
                 lblDinero.setText("Dinero disponible: " + dineroJugador);
                 cardLayout.show(panelPrincipal, "MenuJuego");
             } else {
                 JOptionPane.showMessageDialog(this, "Usuario o contraseña incorrectos.");
             }
         });
+
+        // Acción del botón Cancelar: volver al menú de inicio
+        btnCancelarLogin.addActionListener(e -> {
+            cardLayout.show(panelPrincipal, "Inicio");
+        });
     }
 
     // Pantalla de registro con usuario, contraseña y boton aceptar
     private void crearPantallaRegistro() {
-        JPanel registroPanel = new JPanel(new GridLayout(6, 1, 5, 5));
+        JPanel registroPanel = new JPanel(new GridLayout(7, 1, 5, 5)); // Aumentamos de 6 a 7 filas
 
         txtUsuarioRegistro = new JTextField();
         txtPasswordRegistro = new JPasswordField();
         chkMostrarContraseñaRegistro = new JCheckBox("Mostrar Contraseña");
         JButton btnAceptarRegistro = new JButton("Aceptar");
+        JButton btnCancelarRegistro = new JButton("Cancelar");  // Botón de cancelar
 
         registroPanel.add(new JLabel("Usuario:"));
         registroPanel.add(txtUsuarioRegistro);
@@ -144,10 +151,10 @@ public class InterfazBlackjack extends JFrame {
         registroPanel.add(txtPasswordRegistro);
         registroPanel.add(chkMostrarContraseñaRegistro);
         registroPanel.add(btnAceptarRegistro);
+        registroPanel.add(btnCancelarRegistro);  // Agregar botón de cancelar
 
         panelPrincipal.add(registroPanel, "Registro");
 
-        // Mostrar u ocultar contrasena segun checkbox
         chkMostrarContraseñaRegistro.addActionListener(e -> {
             if (chkMostrarContraseñaRegistro.isSelected()) {
                 txtPasswordRegistro.setEchoChar((char) 0);
@@ -156,12 +163,10 @@ public class InterfazBlackjack extends JFrame {
             }
         });
 
-        // Al aceptar, mostrar mensaje y volver al inicio
         btnAceptarRegistro.addActionListener(e -> {
             String usuario = txtUsuarioRegistro.getText();
             String contraseña = new String(txtPasswordRegistro.getPassword());
 
-            // Validar si el usuario ya existe
             if (blackjackService.buscarJugadorPorNombre(usuario) != null) {
                 JOptionPane.showMessageDialog(this, "El usuario ya existe.");
                 return;
@@ -179,6 +184,11 @@ public class InterfazBlackjack extends JFrame {
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(this, "Error al registrar el usuario.");
             }
+        });
+
+        // Acción del botón Cancelar: vuelve al menú inicial
+        btnCancelarRegistro.addActionListener(e -> {
+            cardLayout.show(panelPrincipal, "Inicio");
         });
     }
 
@@ -206,29 +216,22 @@ public class InterfazBlackjack extends JFrame {
         // Continuar partida guardada, actualizar interfaz
         btnContinuar.addActionListener(e -> {
             Jugador jugador = blackjackService.buscarJugadorPorNombre(txtUsuarioLogin.getText());
-            if (jugador == null) {
-                JOptionPane.showMessageDialog(this, "Debe iniciar sesión primero.");
+            Partida partidaGuardada = blackjackService.buscarPartidaAbierta(jugador);
+
+            // Si no se encuentra o si la partida tiene saldo 0, se redirige al menú.
+            if (partidaGuardada == null || partidaGuardada.getDineroActual() <= 0) {
+                JOptionPane.showMessageDialog(this, "Tu dinero actual es 0, crea una nueva partida.");
+                cardLayout.show(panelPrincipal, "MenuJuego");
                 return;
             }
 
-            List<Partida> partidas = blackjackService.listarPartidasPorJugador(jugador.getIdJugador());
-            if (partidas.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "No hay partida para continuar.");
-                return;
-            }
+            // Si la partida guardada tiene dinero > 0, se carga normalmente.
+            dineroJugador = partidaGuardada.getDineroActual();
+            apuestaActual = 0;
 
-            Partida ultimaPartida = partidas.get(partidas.size() - 1);
-
-            // Usar dinero actual del jugador y apuesta de la partida
-            dineroJugador = jugador.getDinero();
-            apuestaActual = ultimaPartida.getTotalApostado();
-
-            // Cargar las manos guardadas (cartas del jugador y banca) desde ManoJugador
-            List<ManoJugador> manos = blackjackService.cargarManosDePartida(ultimaPartida.getIdPartida());
-
+            List<ManoJugador> manos = blackjackService.cargarManosDePartida(partidaGuardada.getIdPartida());
             manoJugador = new ArrayList<>();
             manoBanca = new ArrayList<>();
-
             for (ManoJugador mano : manos) {
                 int valorCarta = mano.getCarta().getValor() > 10 ? 10 : mano.getCarta().getValor();
                 if (mano.isEs_jugador()) {
@@ -238,13 +241,10 @@ public class InterfazBlackjack extends JFrame {
                 }
             }
 
-            // Actualizar interfaz
             lblDinero.setText("Dinero disponible: " + dineroJugador);
             lblApuesta.setText("Apuesta: " + apuestaActual);
-
             lblCartasJugador.setText("Cartas jugador: " + manoJugador);
             actualizarSuma(manoJugador, lblSumaJugador);
-
             lblCartasBanca.setText("Cartas banca: " + manoBanca);
             actualizarSuma(manoBanca, lblSumaBanca);
 
@@ -416,12 +416,19 @@ public class InterfazBlackjack extends JFrame {
             apuestaActual = 0;
             lblApuesta.setText("Apuesta: 0");
 
+            // Si se pasó de 21, se verifica si el jugador se quedó sin dinero.
             if (dineroJugador <= 0) {
                 JOptionPane.showMessageDialog(this, "No tienes más dinero para apostar. Juego terminado.");
+
+                // Recupera el jugador y guarda la partida automáticamente con saldo 0.
+                Jugador jugador = blackjackService.buscarJugadorPorNombre(txtUsuarioLogin.getText());
+                blackjackService.finalizarPartidaAbierta(jugador);
+
+                // Redirige al menú principal para forzar la creación de una nueva partida.
                 cardLayout.show(panelPrincipal, "MenuJuego");
                 btnGuardarPartida.setVisible(false);
             } else {
-                // Aquí está el cambio: en vez de volver al menu, reiniciamos las manos y dejamos la mesa lista para seguir jugando
+                // Si aún tiene dinero, reinicia las manos para continuar el juego.
                 reiniciarManos();
                 lblDinero.setText("Dinero disponible: " + dineroJugador);
                 btnGuardarPartida.setVisible(true);
@@ -442,38 +449,50 @@ public class InterfazBlackjack extends JFrame {
 
     // Manejo de la Banca
     private void turnoBanca() {
+        // Reinicia la mano de la banca.
         manoBanca = new ArrayList<>();
-        // Repartir cartas mientras suma < 17 usando service
+
+        // Reparte cartas para la banca mientras la suma sea menor a 17.
         while (calcularSuma(manoBanca) < 17) {
             manoBanca.add(pedirCartaDesdeService());
         }
+
         lblCartasBanca.setText("Cartas banca: " + manoBanca);
         actualizarSuma(manoBanca, lblSumaBanca);
 
         int sumaJugador = calcularSuma(manoJugador);
         int sumaBanca = calcularSuma(manoBanca);
 
+        // Evaluación del resultado de la ronda.
         if (sumaBanca > 21) {
             JOptionPane.showMessageDialog(this, "La banca se pasó de 21. ¡Ganaste!");
             dineroJugador += apuestaActual * 2;
-            lblDinero.setText("Dinero disponible: " + dineroJugador);
         } else if (sumaBanca >= sumaJugador) {
             JOptionPane.showMessageDialog(this, "La banca ganó. Perdiste la apuesta.");
         } else {
             JOptionPane.showMessageDialog(this, "¡Ganaste!");
             dineroJugador += apuestaActual * 2;
-            lblDinero.setText("Dinero disponible: " + dineroJugador);
         }
 
+        lblDinero.setText("Dinero disponible: " + dineroJugador);
         apuestaActual = 0;
         lblApuesta.setText("Apuesta: 0");
         btnGuardarPartida.setVisible(true);
 
-        reiniciarManos();
-
+        // Si el jugador se queda sin dinero, guardamos la partida automáticamente con saldo 0.
         if (dineroJugador <= 0) {
+            dineroJugador = 0;
+            lblDinero.setText("Dinero disponible: " + dineroJugador);
             JOptionPane.showMessageDialog(this, "No tienes más dinero para apostar. Juego terminado.");
+
+            Jugador jugador = blackjackService.buscarJugadorPorNombre(txtUsuarioLogin.getText());
+            // Guarda automáticamente la partida con saldo 0 y la finaliza.
+            blackjackService.finalizarPartidaAbierta(jugador);
+
+            // Redirige al menú principal para forzar la creación de una nueva partida.
             cardLayout.show(panelPrincipal, "MenuJuego");
+            btnGuardarPartida.setVisible(false);
+            return;
         }
     }
 
@@ -526,7 +545,7 @@ public class InterfazBlackjack extends JFrame {
         lblSumaBanca.setText("Suma banca: 0");
     }
 
-    // Dentro de InterfazBlackjack.java
+    // Guardar partida
     private void guardarPartida() {
         String nombreUsuario = txtUsuarioLogin.getText();
         Jugador jugador = blackjackService.buscarJugadorPorNombre(nombreUsuario);
@@ -540,20 +559,14 @@ public class InterfazBlackjack extends JFrame {
         int dineroCambiado = dineroDespues - dineroAntes;
 
         try {
-            // Como manoJugador y manoBanca son ArrayList<Integer>, copiamos directamente
             List<Integer> manoJugadorValores = new ArrayList<>(manoJugador);
             List<Integer> manoBancaValores = new ArrayList<>(manoBanca);
 
-            blackjackService.guardarPartidaCompleta(
-                    jugador,
-                    apuestaActual,
-                    dineroCambiado,
-                    manoJugadorValores,
-                    manoBancaValores
-            );
+            // Aquí pasamos true para Nueva Partida, de forma que se cree una nueva instancia.
+            blackjackService.guardarPartidaCompleta(jugador, dineroCambiado,
+                    manoJugadorValores, manoBancaValores, true);
 
             JOptionPane.showMessageDialog(this, "Partida guardada correctamente.");
-
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this, "Error al guardar la partida:\n" + ex.getMessage());
             ex.printStackTrace();
@@ -567,7 +580,6 @@ public class InterfazBlackjack extends JFrame {
                 "Continuar o salir",
                 JOptionPane.YES_NO_OPTION
         );
-
         if (opcion == JOptionPane.YES_OPTION) {
             cardLayout.show(panelPrincipal, "MenuJuego");
             btnGuardarPartida.setVisible(false);

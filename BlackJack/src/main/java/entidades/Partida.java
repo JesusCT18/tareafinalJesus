@@ -10,39 +10,31 @@ public class Partida {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id_partida") // usa el nombre exacto de la columna en la BD
+    @Column(name = "id_partida")
     private int idPartida;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_jugador", nullable = false)
     private Jugador jugador;
 
+    @Column(name = "dinero_actual", nullable = false)
+    private int dineroActual;
+
     @Column(name = "fecha", nullable = false)
     private LocalDateTime fecha;
 
-    @Column(name = "total_apostado", nullable = false)
-    private int totalApostado;
-
-    @Column(name = "total_ganado", nullable = false)
-    private int totalGanado = 0;
-
-    @Column(name = "total_perdido", nullable = false)
-    private int totalPerdido = 0;
-
-    @Column(name = "dinero_actual", nullable = false)
-    private int dineroActual = 0;
-
+    // Opcional: un estado para saber si está en curso o finalizada
     @Column(name = "estado", nullable = false)
     private String estado = "En curso";
 
     public Partida() {
     }
 
-    public Partida(int idPartida, Jugador jugador, LocalDateTime fecha, int totalApostado) {
+    public Partida(int idPartida, Jugador jugador, int dineroActual, LocalDateTime fecha) {
         this.idPartida = idPartida;
         this.jugador = jugador;
+        this.dineroActual = dineroActual;
         this.fecha = fecha;
-        this.totalApostado = totalApostado;
     }
 
     public int getIdPartida() {
@@ -61,44 +53,20 @@ public class Partida {
         this.jugador = jugador;
     }
 
-    public LocalDateTime getFecha() {
-        return fecha;
-    }
-
-    public void setFecha(LocalDateTime fecha) {
-        this.fecha = fecha;
-    }
-
-    public int getTotalApostado() {
-        return totalApostado;
-    }
-
-    public void setTotalApostado(int totalApostado) {
-        this.totalApostado = totalApostado;
-    }
-
-    public int getTotalGanado() {
-        return totalGanado;
-    }
-
-    public void setTotalGanado(int totalGanado) {
-        this.totalGanado = totalGanado;
-    }
-
-    public int getTotalPerdido() {
-        return totalPerdido;
-    }
-
-    public void setTotalPerdido(int totalPerdido) {
-        this.totalPerdido = totalPerdido;
-    }
-
     public int getDineroActual() {
         return dineroActual;
     }
 
     public void setDineroActual(int dineroActual) {
         this.dineroActual = dineroActual;
+    }
+
+    public LocalDateTime getFecha() {
+        return fecha;
+    }
+
+    public void setFecha(LocalDateTime fecha) {
+        this.fecha = fecha;
     }
 
     public String getEstado() {
@@ -111,20 +79,17 @@ public class Partida {
 
     @Override
     public String toString() {
-        return "Partida{" + "idPartida=" + idPartida + ", jugador=" + jugador + ", fecha=" + fecha + ", totalApostado=" + totalApostado + ", totalGanado=" + totalGanado + ", totalPerdido=" + totalPerdido + ", dineroActual=" + dineroActual + ", estado=" + estado + '}';
+        return "Partida{" + "idPartida=" + idPartida + ", jugador=" + jugador + ", dineroActual=" + dineroActual + ", fecha=" + fecha + ", estado=" + estado + '}';
     }
 
     @Override
     public int hashCode() {
-        int hash = 3;
-        hash = 11 * hash + this.idPartida;
-        hash = 11 * hash + Objects.hashCode(this.jugador);
-        hash = 11 * hash + Objects.hashCode(this.fecha);
-        hash = 11 * hash + this.totalApostado;
-        hash = 11 * hash + this.totalGanado;
-        hash = 11 * hash + this.totalPerdido;
-        hash = 11 * hash + this.dineroActual;
-        hash = 11 * hash + Objects.hashCode(this.estado);
+        int hash = 7;
+        hash = 89 * hash + this.idPartida;
+        hash = 89 * hash + Objects.hashCode(this.jugador);
+        hash = 89 * hash + this.dineroActual;
+        hash = 89 * hash + Objects.hashCode(this.fecha);
+        hash = 89 * hash + Objects.hashCode(this.estado);
         return hash;
     }
 
@@ -141,15 +106,6 @@ public class Partida {
         }
         final Partida other = (Partida) obj;
         if (this.idPartida != other.idPartida) {
-            return false;
-        }
-        if (this.totalApostado != other.totalApostado) {
-            return false;
-        }
-        if (this.totalGanado != other.totalGanado) {
-            return false;
-        }
-        if (this.totalPerdido != other.totalPerdido) {
             return false;
         }
         if (this.dineroActual != other.dineroActual) {

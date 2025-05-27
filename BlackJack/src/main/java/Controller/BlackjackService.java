@@ -53,99 +53,114 @@ public class BlackjackService {
     }
 
     public Partida buscarPartidaAbierta(Jugador jugador) {
-        TypedQuery<Partida> query = em.createQuery(
-                "SELECT p FROM Partida p WHERE p.jugador = :jugador AND p.estado = 'ABIERTA'",
-                Partida.class
-        );
-        query.setParameter("jugador", jugador);
-        List<Partida> resultados = query.getResultList();
-        return resultados.isEmpty() ? null : resultados.get(0);
+        try {
+            return em.createQuery(
+                    "SELECT p FROM Partida p WHERE p.jugador = :jugador AND p.estado = 'En curso'",
+                    Partida.class)
+                    .setParameter("jugador", jugador)
+                    .getSingleResult();
+        } catch (NoResultException e) {
+            return null;
+        }
     }
 
     // Guardar partida completa con cartas y mano del jugador
     public void guardarPartidaCompleta(
             Jugador jugador,
-            int montoApostado,
             int dineroCambiado,
             List<Integer> manoJugadorValores,
-            List<Integer> manoBancaValores
+            List<Integer> manoBancaValores,
+            boolean crearNueva
     ) {
         EntityTransaction tx = em.getTransaction();
         try {
             tx.begin();
-
             jugador = em.find(Jugador.class, jugador.getIdJugador());
 
-            // Buscar partida abierta
-            Partida partida = buscarPartidaAbierta(jugador);
-
-            if (partida == null) {
-                // Si no hay partida abierta, crear una nueva
+            Partida partida;
+            if (crearNueva) {
+                // Si hay una partida abierta, se finaliza (o se marca de forma que no se encuentre al buscar una partida abierta)
+                Partida abierta = buscarPartidaAbierta(jugador);
+                if (abierta != null) {
+                    abierta.setEstado("Finalizada");
+                    em.merge(abierta);
+                }
+                // Se crea una nueva partida
                 partida = new Partida();
                 partida.setJugador(jugador);
                 jugador.getPartidas().add(partida);
                 partida.setFecha(LocalDateTime.now());
                 partida.setEstado("En curso");
-                partida.setTotalApostado(0);
-                partida.setTotalGanado(0);
-                partida.setTotalPerdido(0);
                 partida.setDineroActual(jugador.getDinero());
                 em.persist(partida);
-                em.flush(); // para generar idPartida
-            }
-
-            // Acumular valores en la partida existente
-            partida.setTotalApostado(partida.getTotalApostado() + montoApostado);
-
-            if (dineroCambiado >= 0) {
-                partida.setTotalGanado(partida.getTotalGanado() + dineroCambiado);
+                em.flush();  // Así se genera una nueva id
             } else {
-                partida.setTotalPerdido(partida.getTotalPerdido() + (-dineroCambiado));
-            }
-
-            int dineroFinal = jugador.getDinero() + dineroCambiado;
-            partida.setDineroActual(dineroFinal);
-
-            // Si quieres puedes cambiar el estado si ya se finalizó la partida, aquí lo dejo así:
-            // partida.setEstado("Finalizada"); // solo si es el cierre de la partida
-            // Guardar cartas (igual que antes)
-            String jpqlCarta = "SELECT c FROM Carta c WHERE c.valor = :v";
-
-            if (manoJugadorValores != null && !manoJugadorValores.isEmpty()) {
-                for (int val : manoJugadorValores) {
-                    Carta carta = em.createQuery(jpqlCarta, Carta.class)
-                            .setParameter("v", Math.min(val, 10))
-                            .setMaxResults(1)
-                            .getSingleResult();
-
-                    ManoJugador manoJugador = new ManoJugador();
-                    manoJugador.setPartida(partida);
-                    manoJugador.setJugador(jugador);
-                    manoJugador.setCarta(carta);
-                    manoJugador.setEs_jugador(true);
-                    em.persist(manoJugador);
+                // Se busca la partida abierta; si no existe, se crea
+                partida = buscarPartidaAbierta(jugador);
+                if (partida == null) {
+                    partida = new Partida();
+                    partida.setJugador(jugador);
+                    jugador.getPartidas().add(partida);
+                    partida.setFecha(LocalDateTime.now());
+                    partida.setEstado("En curso");
+                    partida.setDineroActual(jugador.getDinero());
+                    em.persist(partida);
+                    em.flush();
                 }
             }
 
-            if (manoBancaValores != null && !manoBancaValores.isEmpty()) {
-                for (int val : manoBancaValores) {
-                    Carta carta = em.createQuery(jpqlCarta, Carta.class)
+            // Actualizamos el dinero actual (por ejemplo, con dineroCambiado)
+            int dineroFinal = jugador.getDinero() + dineroCambiado;
+            partida.setDineroActual(dineroFinal);
+            jugador.setDinero(dineroFinal);
+
+            em.merge(jugador);
+            em.merge(partida);
+
+            // Guardar cartas de la mano del jugador
+            String jpqlCarta = "SELECT c FROM Carta c WHERE c.valor = :v";
+            if (manoJugadorValores != null && !manoJugadorValores.isEmpty()) {
+                for (int val : manoJugadorValores) {
+                    List<Carta> cartasEncontradas = em.createQuery(jpqlCarta, Carta.class)
                             .setParameter("v", Math.min(val, 10))
                             .setMaxResults(1)
-                            .getSingleResult();
+                            .getResultList();
+                    if (cartasEncontradas.isEmpty()) {
+                        throw new RuntimeException("No se encontró una carta con valor: " + Math.min(val, 10));
+                    }
+                    Carta carta = cartasEncontradas.get(0);
+                    // Aquí se podría imprimir "Carta encontrada: " + carta para depuración.
+
+                    ManoJugador mano = new ManoJugador();
+                    mano.setPartida(partida);
+                    mano.setJugador(jugador);
+                    mano.setCarta(carta);
+                    mano.setEs_jugador(true);
+                    em.persist(mano);
+                }
+            }
+
+            // Para la mano de la banca
+            if (manoBancaValores != null && !manoBancaValores.isEmpty()) {
+                for (int val : manoBancaValores) {
+                    List<Carta> cartasEncontradas = em.createQuery(jpqlCarta, Carta.class)
+                            .setParameter("v", Math.min(val, 10))
+                            .setMaxResults(1)
+                            .getResultList();
+                    if (cartasEncontradas.isEmpty()) {
+                        throw new RuntimeException("No se encontró una carta con valor: " + Math.min(val, 10));
+                    }
+                    Carta cartaBanca = cartasEncontradas.get(0);
+                    System.out.println("Carta encontrada (banca): " + cartaBanca);
 
                     ManoJugador manoBanca = new ManoJugador();
                     manoBanca.setPartida(partida);
                     manoBanca.setJugador(jugador);
-                    manoBanca.setCarta(carta);
-                    manoBanca.setEs_jugador(false);
+                    manoBanca.setCarta(cartaBanca);
+                    manoBanca.setEs_jugador(false);  // Asegúrate de que el setter esté en camelCase y sea el correcto
                     em.persist(manoBanca);
                 }
             }
-
-            jugador.setDinero(dineroFinal);
-            em.merge(jugador);
-            em.merge(partida);  // actualizar partida
 
             tx.commit();
         } catch (Exception e) {
@@ -218,6 +233,25 @@ public class BlackjackService {
         Query query = em.createNativeQuery("SELECT * FROM Cartas ORDER BY RAND() LIMIT :cantidad", Carta.class);
         query.setParameter("cantidad", cantidad);
         return query.getResultList();
+    }
+
+    public void finalizarPartidaAbierta(Jugador jugador) {
+        EntityTransaction tx = em.getTransaction();
+        try {
+            tx.begin();
+            Partida partidaAbierta = buscarPartidaAbierta(jugador);
+            if (partidaAbierta != null) {
+                partidaAbierta.setEstado("Finalizada");
+                partidaAbierta.setDineroActual(0);  // Se forza a guardar el saldo en 0.
+                em.merge(partidaAbierta);
+            }
+            tx.commit();
+        } catch (Exception e) {
+            if (tx.isActive()) {
+                tx.rollback();
+            }
+            throw e;
+        }
     }
 
     // Cerrar conexiones

@@ -9,12 +9,13 @@ public class Carta {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id_carta")
     private int id_carta;
 
-    @Column(nullable = false)
+    @Column(name = "nombre", nullable = false)
     private String nombre; // Ejemplo: 'As de Corazones'
 
-    @Column(nullable = false)
+    @Column(name = "valor", nullable = false)
     private int valor; // Valor de la carta en el juego
 
     public Carta() {

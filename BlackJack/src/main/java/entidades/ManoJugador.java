@@ -11,6 +11,7 @@ public class ManoJugador {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id_mano")
     private int id_mano;
     
     @ManyToOne
