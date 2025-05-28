@@ -44,17 +44,17 @@ public class InterfazBlackjack extends JFrame {
     public InterfazBlackjack() {
         blackjackService = new BlackjackService();
         setTitle("Blackjack");
-        setSize(800, 600);
+        setSize(800, 600);  // Tamaño fijo en lugar de pantalla completa
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
         setResizable(false);
 
-        // Configuracion principal con CardLayout para cambiar pantallas
+        // Configuración principal con CardLayout para cambiar pantallas
         cardLayout = new CardLayout();
         panelPrincipal = new JPanel(cardLayout);
         add(panelPrincipal);
 
-        // Creacion de las pantallas
+        // Creación de las pantallas
         crearMenuInicio();
         crearPantallaLogin();
         crearPantallaRegistro();
@@ -67,19 +67,52 @@ public class InterfazBlackjack extends JFrame {
 
     // Menu inicial con opciones Iniciar Sesion, Registrarse y Salir
     private void crearMenuInicio() {
+        // Se carga el GIF de fondo "fondo2.gif" y se crea el panel auxiliar para el fondo.
+        ImageIcon fondoIcon = new ImageIcon(getClass().getResource("/fondo1.gif"));
+        MyBackgroundPanel backgroundPanel = new MyBackgroundPanel(fondoIcon.getImage());
+        backgroundPanel.setLayout(new BorderLayout());
+
+        // Se crea el panel original con GridLayout para los botones
         JPanel panelInicio = new JPanel(new GridLayout(3, 1, 10, 10));
+        panelInicio.setOpaque(false); // Importante para ver el fondo
 
         btnIniciarSesion = new JButton("Iniciar Sesión");
         btnRegistrarse = new JButton("Registrarse");
         btnSalirInicio = new JButton("Salir");
 
+        // Ajustamos el tamaño y estilo de los botones para que se vea bien el fondo
+        Font btnFont = new Font("Arial", Font.BOLD, 36);
+        btnIniciarSesion.setFont(btnFont);
+        btnRegistrarse.setFont(btnFont);
+        btnSalirInicio.setFont(btnFont);
+
+        // Hacer los botones semitransparentes para que no tapen el fondo
+        btnIniciarSesion.setOpaque(false);
+        btnIniciarSesion.setContentAreaFilled(false);
+        btnIniciarSesion.setForeground(Color.WHITE);
+        btnIniciarSesion.setBorder(BorderFactory.createLineBorder(new Color(255, 255, 255, 150), 2));
+
+        btnRegistrarse.setOpaque(false);
+        btnRegistrarse.setContentAreaFilled(false);
+        btnRegistrarse.setForeground(Color.WHITE);
+        btnRegistrarse.setBorder(BorderFactory.createLineBorder(new Color(255, 255, 255, 150), 2));
+
+        btnSalirInicio.setOpaque(false);
+        btnSalirInicio.setContentAreaFilled(false);
+        btnSalirInicio.setForeground(Color.WHITE);
+        btnSalirInicio.setBorder(BorderFactory.createLineBorder(new Color(255, 255, 255, 150), 2));
+
         panelInicio.add(btnIniciarSesion);
         panelInicio.add(btnRegistrarse);
         panelInicio.add(btnSalirInicio);
 
-        panelPrincipal.add(panelInicio, "Inicio");
+        // Se coloca el panel de botones en el centro del BackgroundPanel, para que se vea el fondo completo.
+        backgroundPanel.add(panelInicio, BorderLayout.CENTER);
 
-        // Cambiar pantallas segun boton pulsado
+        // Se anade el BackgroundPanel al panel principal con su etiqueta.
+        panelPrincipal.add(backgroundPanel, "Inicio");
+
+        // Acciones sin cambios en la logica
         btnIniciarSesion.addActionListener(e -> cardLayout.show(panelPrincipal, "Login"));
         btnRegistrarse.addActionListener(e -> cardLayout.show(panelPrincipal, "Registro"));
         btnSalirInicio.addActionListener(e -> System.exit(0));
@@ -202,20 +235,54 @@ public class InterfazBlackjack extends JFrame {
 
     }
 
+    // Menu del Juego
     private void crearMenuJuego() {
-        JPanel menuJuego = new JPanel(new GridLayout(3, 1, 10, 10));
+        // Se carga el GIF de fondo "fondo2.gif" y se crea un MyBackgroundPanel
+        ImageIcon fondoIcon = new ImageIcon(getClass().getResource("/fondo2.gif"));
+        MyBackgroundPanel backgroundPanel = new MyBackgroundPanel(fondoIcon.getImage());
+        backgroundPanel.setLayout(new BorderLayout());
 
+        // Se crea el panel original (con GridLayout) para los botones y se configura como transparente
+        JPanel menuJuego = new JPanel(new GridLayout(3, 1, 10, 10));
+        menuJuego.setOpaque(false);
+
+        // Se crean los botones
         btnNuevaPartida = new JButton("Nueva Partida");
         btnContinuar = new JButton("Continuar Partida");
         btnSalirMenuJuego = new JButton("Salir");
 
+        // Ajustamos el estilo de los botones: fuente grande, texto blanco, sin relleno y con borde semitransparente
+        Font btnFont = new Font("Arial", Font.BOLD, 36);
+        btnNuevaPartida.setFont(btnFont);
+        btnContinuar.setFont(btnFont);
+        btnSalirMenuJuego.setFont(btnFont);
+
+        btnNuevaPartida.setOpaque(false);
+        btnNuevaPartida.setContentAreaFilled(false);
+        btnNuevaPartida.setForeground(Color.WHITE);
+        btnNuevaPartida.setBorder(BorderFactory.createLineBorder(new Color(255, 255, 255, 150), 2));
+
+        btnContinuar.setOpaque(false);
+        btnContinuar.setContentAreaFilled(false);
+        btnContinuar.setForeground(Color.WHITE);
+        btnContinuar.setBorder(BorderFactory.createLineBorder(new Color(255, 255, 255, 150), 2));
+
+        btnSalirMenuJuego.setOpaque(false);
+        btnSalirMenuJuego.setContentAreaFilled(false);
+        btnSalirMenuJuego.setForeground(Color.WHITE);
+        btnSalirMenuJuego.setBorder(BorderFactory.createLineBorder(new Color(255, 255, 255, 150), 2));
+
+        // Se añaden los botones al panel con GridLayout
         menuJuego.add(btnNuevaPartida);
         menuJuego.add(btnContinuar);
         menuJuego.add(btnSalirMenuJuego);
 
-        panelPrincipal.add(menuJuego, "MenuJuego");
+        // Se añade el panel de botones al centro del BackgroundPanel
+        backgroundPanel.add(menuJuego, BorderLayout.CENTER);
+        panelPrincipal.add(backgroundPanel, "MenuJuego");
 
-        // Nueva partida: iniciar, mostrar mesa y boton guardar visible
+        // Lógica sin modificar
+        // Nueva partida: iniciar, mostrar mesa y hacer visible el botón de guardar
         btnNuevaPartida.addActionListener(e -> {
             iniciarNuevaPartida();
             cardLayout.show(panelPrincipal, "MesaJuego");
@@ -223,19 +290,19 @@ public class InterfazBlackjack extends JFrame {
             btnGuardarPartida.setVisible(true);
         });
 
-        // Continuar partida guardada, actualizar interfaz
+        // Continuar partida: si existe, actualizar la interfaz y cargar la partida
         btnContinuar.addActionListener(e -> {
             Jugador jugador = blackjackService.buscarJugadorPorNombre(txtUsuarioLogin.getText());
             Partida partidaGuardada = blackjackService.buscarPartidaAbierta(jugador);
 
-            // Si no se encuentra o si la partida tiene saldo 0, se redirige al menú.
+            // Si no se encuentra o la partida tiene saldo 0, se redirige de vuelta al menú
             if (partidaGuardada == null || partidaGuardada.getDineroActual() <= 0) {
                 JOptionPane.showMessageDialog(this, "Tu dinero actual es 0, crea una nueva partida.");
                 cardLayout.show(panelPrincipal, "MenuJuego");
                 return;
             }
 
-            // Si la partida guardada tiene dinero > 0, se carga normalmente.
+            // Si existe partida, se carga normalmente
             dineroJugador = partidaGuardada.getDineroActual();
             apuestaActual = 0;
 
@@ -268,12 +335,24 @@ public class InterfazBlackjack extends JFrame {
 
     // Pantalla principal del juego: muestra cartas, suma, dinero y botones de accion
     private void crearMesaJuego() {
-        JPanel mesaPanel = new JPanel(new BorderLayout(20, 20)); // espacio entre componentes
+        // Se carga el GIF de fondo ("/fondo.gif") y se crea un MyBackgroundPanel.
+        // Se usa URL para verificar que la imagen exista.
+        URL gifURL = getClass().getResource("/fondo.gif");
+        MyBackgroundPanel mesaPanel;
+        if (gifURL == null) {
+            System.err.println("❌No se encontró el GIF en /fondo.gif");
+            mesaPanel = new MyBackgroundPanel(null);
+        } else {
+            ImageIcon fondoIcon = new ImageIcon(gifURL);
+            mesaPanel = new MyBackgroundPanel(fondoIcon.getImage());
+        }
+        mesaPanel.setLayout(new BorderLayout(20, 20)); // Espacio entre componentes
 
-        // Panel izquierdo con info (cartas, suma, dinero, apuesta)
+        // Panel izquierdo con la información (cartas, suma, dinero, apuesta)
         JPanel panelInfo = new JPanel();
         panelInfo.setLayout(new BoxLayout(panelInfo, BoxLayout.Y_AXIS));
-        panelInfo.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20)); // padding
+        panelInfo.setOpaque(false); // Para que se vea el fondo
+        panelInfo.setBorder(BorderFactory.createEmptyBorder(100, 20, 20, 20));
 
         lblDinero = new JLabel("Dinero disponible: " + dineroJugador);
         lblApuesta = new JLabel("Apuesta: " + apuestaActual);
@@ -282,7 +361,22 @@ public class InterfazBlackjack extends JFrame {
         lblCartasBanca = new JLabel("Cartas banca: []");
         lblSumaBanca = new JLabel("Suma banca: 0");
 
-        // Agregar etiquetas con espaciadores
+        // Se ajustan los colores y fuente para que las etiquetas se vean sobre el fondo
+        Font infoFont = new Font("Arial", Font.BOLD, 24);
+        Color labelColor = Color.WHITE;
+        lblDinero.setFont(infoFont);
+        lblApuesta.setFont(infoFont);
+        lblCartasJugador.setFont(infoFont);
+        lblSumaJugador.setFont(infoFont);
+        lblCartasBanca.setFont(infoFont);
+        lblSumaBanca.setFont(infoFont);
+        lblDinero.setForeground(labelColor);
+        lblApuesta.setForeground(labelColor);
+        lblCartasJugador.setForeground(labelColor);
+        lblSumaJugador.setForeground(labelColor);
+        lblCartasBanca.setForeground(labelColor);
+        lblSumaBanca.setForeground(labelColor);
+
         panelInfo.add(lblDinero);
         panelInfo.add(Box.createVerticalStrut(10));
         panelInfo.add(lblApuesta);
@@ -293,46 +387,43 @@ public class InterfazBlackjack extends JFrame {
         panelInfo.add(lblCartasBanca);
         panelInfo.add(lblSumaBanca);
 
-        // Panel derecho con botones (alineados verticalmente y centrados)
+        // Panel derecho con los botones (dispuestos verticalmente y centrados)
         JPanel panelBotones = new JPanel();
         panelBotones.setLayout(new BoxLayout(panelBotones, BoxLayout.Y_AXIS));
-        panelBotones.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20)); // padding
+        panelBotones.setOpaque(false); // Para mostrar el fondo
+        panelBotones.setBorder(BorderFactory.createEmptyBorder(100, 20, 20, 20));
 
         btnApostar = new JButton("Elegir apuesta");
         btnPedirCarta = new JButton("Pedir carta");
         btnPasar = new JButton("Pasar");
         btnGuardarPartida = new JButton("Guardar partida");
 
-        Dimension btnSize = new Dimension(150, 40);
+        Dimension btnSize = new Dimension(200, 50);
+        Font btnFont = new Font("Arial", Font.BOLD, 20);
         JButton[] botones = {btnApostar, btnPedirCarta, btnPasar, btnGuardarPartida};
         for (JButton btn : botones) {
+            btn.setFont(btnFont);
             btn.setMaximumSize(btnSize);
             btn.setAlignmentX(Component.CENTER_ALIGNMENT);
+            // Se configuran los botones para ser semitransparentes (se ve el fondo)
+            btn.setOpaque(false);
+            btn.setContentAreaFilled(false);
+            btn.setForeground(Color.WHITE);
+            btn.setBorder(BorderFactory.createLineBorder(new Color(255, 255, 255, 150), 2));
             panelBotones.add(btn);
-            panelBotones.add(Box.createVerticalStrut(15));
+            panelBotones.add(Box.createVerticalStrut(10));
         }
 
         btnGuardarPartida.setVisible(false);
 
-        // Añadir paneles al panel principal
+        // Se anaden el panel de información (en el centro) y el de botones (al este)
         mesaPanel.add(panelInfo, BorderLayout.CENTER);
         mesaPanel.add(panelBotones, BorderLayout.EAST);
 
-        // Cargar el GIF desde resources (debe estar en src/main/resources/)
-        URL gifURL = getClass().getResource("/fondo.gif");
-        if (gifURL == null) {
-            System.err.println("❌No se encontró el GIF en /fondo.gif");
-        } else {
-            ImageIcon gifIcon = new ImageIcon(gifURL);
-            JLabel gifLabel = new JLabel(gifIcon);
-            gifLabel.setPreferredSize(new Dimension(800, 300)); // Ajusta tamaño según espacio en blanco
-            gifLabel.setOpaque(false); // Transparente por si acaso
-            mesaPanel.add(gifLabel, BorderLayout.SOUTH);
-        }
-
+        // Se anade el MyBackgroundPanel (mesaPanel) al panelPrincipal del CardLayout
         panelPrincipal.add(mesaPanel, "MesaJuego");
 
-        // Listeners para los botones
+        // Listeners para los botones (se conserva la lógica original)
         btnApostar.addActionListener(e -> elegirApuesta());
         btnPedirCarta.addActionListener(e -> {
             if (apuestaActual <= 0) {
@@ -348,7 +439,7 @@ public class InterfazBlackjack extends JFrame {
             }
             turnoBanca();
         });
-        btnGuardarPartida.addActionListener(e -> guardarPartida()); // solo visible tras iniciar o continuar partida
+        btnGuardarPartida.addActionListener(e -> guardarPartida());
     }
 
     // Metodo para iniciar nueva partida: limpiar manos y pedir apuesta
@@ -413,7 +504,7 @@ public class InterfazBlackjack extends JFrame {
         dialog.setVisible(true);
     }
 
-    // Inicia reparto de cartas (2 jugador, 1 banca), muestra cartas y suma jugador
+    // Inicia reparto de cartas 
     private void pedirCartaJugador() {
         int carta = pedirCartaDesdeService();
         manoJugador.add(carta);
