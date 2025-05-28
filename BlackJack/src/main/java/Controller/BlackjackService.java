@@ -75,17 +75,19 @@ public class BlackjackService {
         EntityTransaction tx = em.getTransaction();
         try {
             tx.begin();
+            // Se recupera el jugador para asegurarse de tener el ID asignado
             jugador = em.find(Jugador.class, jugador.getIdJugador());
+            if (jugador == null) {
+                throw new RuntimeException("Jugador no encontrado");
+            }
 
             Partida partida;
             if (crearNueva) {
-                // Si hay una partida abierta, se finaliza (o se marca de forma que no se encuentre al buscar una partida abierta)
                 Partida abierta = buscarPartidaAbierta(jugador);
                 if (abierta != null) {
                     abierta.setEstado("Finalizada");
                     em.merge(abierta);
                 }
-                // Se crea una nueva partida
                 partida = new Partida();
                 partida.setJugador(jugador);
                 jugador.getPartidas().add(partida);
@@ -93,9 +95,9 @@ public class BlackjackService {
                 partida.setEstado("En curso");
                 partida.setDineroActual(jugador.getDinero());
                 em.persist(partida);
-                em.flush();  // Así se genera una nueva id
+                em.flush();  // Forzamos asignación de ID
+                System.out.println("Partida creada con ID: " + partida.getIdPartida());
             } else {
-                // Se busca la partida abierta; si no existe, se crea
                 partida = buscarPartidaAbierta(jugador);
                 if (partida == null) {
                     partida = new Partida();
@@ -106,10 +108,10 @@ public class BlackjackService {
                     partida.setDineroActual(jugador.getDinero());
                     em.persist(partida);
                     em.flush();
+                    System.out.println("Partida creada con ID: " + partida.getIdPartida());
                 }
             }
 
-            // Actualizamos el dinero actual (por ejemplo, con dineroCambiado)
             int dineroFinal = jugador.getDinero() + dineroCambiado;
             partida.setDineroActual(dineroFinal);
             jugador.setDinero(dineroFinal);
@@ -117,8 +119,8 @@ public class BlackjackService {
             em.merge(jugador);
             em.merge(partida);
 
-            // Guardar cartas de la mano del jugador
             String jpqlCarta = "SELECT c FROM Carta c WHERE c.valor = :v";
+            // Guardar cartas de la mano del jugador
             if (manoJugadorValores != null && !manoJugadorValores.isEmpty()) {
                 for (int val : manoJugadorValores) {
                     List<Carta> cartasEncontradas = em.createQuery(jpqlCarta, Carta.class)
@@ -129,18 +131,24 @@ public class BlackjackService {
                         throw new RuntimeException("No se encontró una carta con valor: " + Math.min(val, 10));
                     }
                     Carta carta = cartasEncontradas.get(0);
-                    // Aquí se podría imprimir "Carta encontrada: " + carta para depuración.
+                    System.out.println("Carta obtenida: ID=" + carta.getIdCarta() + ", Nombre=" + carta.getNombre());
 
                     ManoJugador mano = new ManoJugador();
                     mano.setPartida(partida);
                     mano.setJugador(jugador);
                     mano.setCarta(carta);
                     mano.setEs_jugador(true);
+                    mano.setNombreCarta(carta.getNombre());
+                    System.out.println("Guardando ManoJugador: " + "PartidaID=" + partida.getIdPartida()
+                            + ", JugadorID=" + jugador.getIdJugador()
+                            + ", CartaID=" + carta.getIdCarta()
+                            + ", NombreCarta=" + carta.getNombre()
+                            + ", es_jugador=" + mano.isEs_jugador());
                     em.persist(mano);
                 }
             }
 
-            // Para la mano de la banca
+            // Guardar cartas de la mano de la banca
             if (manoBancaValores != null && !manoBancaValores.isEmpty()) {
                 for (int val : manoBancaValores) {
                     List<Carta> cartasEncontradas = em.createQuery(jpqlCarta, Carta.class)
@@ -151,13 +159,19 @@ public class BlackjackService {
                         throw new RuntimeException("No se encontró una carta con valor: " + Math.min(val, 10));
                     }
                     Carta cartaBanca = cartasEncontradas.get(0);
-                    System.out.println("Carta encontrada (banca): " + cartaBanca);
+                    System.out.println("Carta obtenida (banca): ID=" + cartaBanca.getIdCarta() + ", Nombre=" + cartaBanca.getNombre());
 
                     ManoJugador manoBanca = new ManoJugador();
                     manoBanca.setPartida(partida);
                     manoBanca.setJugador(jugador);
                     manoBanca.setCarta(cartaBanca);
-                    manoBanca.setEs_jugador(false);  // Asegúrate de que el setter esté en camelCase y sea el correcto
+                    manoBanca.setEs_jugador(false);
+                    manoBanca.setNombreCarta(cartaBanca.getNombre());
+                    System.out.println("Guardando ManoJugador (banca)" + "PartidaID=" + partida.getIdPartida()
+                            + ", JugadorID=" + jugador.getIdJugador()
+                            + ", CartaID=" + cartaBanca.getIdCarta()
+                            + ", NombreCarta=" + cartaBanca.getNombre()
+                            + ", es_jugador=" + manoBanca.isEs_jugador());
                     em.persist(manoBanca);
                 }
             }

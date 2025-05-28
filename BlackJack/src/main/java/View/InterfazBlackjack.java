@@ -87,13 +87,13 @@ public class InterfazBlackjack extends JFrame {
 
     // Pantalla de login con usuario, contraseña y boton aceptar
     private void crearPantallaLogin() {
-        JPanel loginPanel = new JPanel(new GridLayout(7, 1, 5, 5)); // Actualizamos filas (ahora 7 en vez de 6)
+        JPanel loginPanel = new JPanel(new GridLayout(7, 1, 5, 5));
 
         txtUsuarioLogin = new JTextField();
         txtPasswordLogin = new JPasswordField();
         chkMostrarContraseñaLogin = new JCheckBox("Mostrar Contraseña");
         JButton btnAceptarLogin = new JButton("Aceptar");
-        JButton btnCancelarLogin = new JButton("Cancelar");  // Botón de cancelar
+        JButton btnCancelarLogin = new JButton("Cancelar");
 
         loginPanel.add(new JLabel("Usuario:"));
         loginPanel.add(txtUsuarioLogin);
@@ -101,23 +101,24 @@ public class InterfazBlackjack extends JFrame {
         loginPanel.add(txtPasswordLogin);
         loginPanel.add(chkMostrarContraseñaLogin);
         loginPanel.add(btnAceptarLogin);
-        loginPanel.add(btnCancelarLogin);  // Agregamos el botón de cancelar al panel
+        loginPanel.add(btnCancelarLogin);
 
         panelPrincipal.add(loginPanel, "Login");
 
         // Mostrar u ocultar contraseña
         chkMostrarContraseñaLogin.addActionListener(e -> {
-            if (chkMostrarContraseñaLogin.isSelected()) {
-                txtPasswordLogin.setEchoChar((char) 0);
-            } else {
-                txtPasswordLogin.setEchoChar('*');
-            }
+            txtPasswordLogin.setEchoChar(chkMostrarContraseñaLogin.isSelected() ? (char) 0 : '*');
         });
 
-        // Acción del botón Aceptar (mantiene la lógica actual)
+        // Validacion antes de permitir el inicio de sesion
         btnAceptarLogin.addActionListener(e -> {
-            String usuario = txtUsuarioLogin.getText();
-            String contraseña = new String(txtPasswordLogin.getPassword());
+            String usuario = txtUsuarioLogin.getText().trim();
+            String contraseña = new String(txtPasswordLogin.getPassword()).trim();
+
+            if (usuario.isEmpty() || contraseña.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Debes completar ambos campos para iniciar sesión.");
+                return;
+            }
 
             Jugador jugador = blackjackService.buscarJugadorPorNombre(usuario);
             if (jugador != null && jugador.getContraseña().equals(contraseña)) {
@@ -129,21 +130,25 @@ public class InterfazBlackjack extends JFrame {
             }
         });
 
-        // Acción del botón Cancelar: volver al menú de inicio
+        // Accion del boton cancelar
         btnCancelarLogin.addActionListener(e -> {
+            // Limpia los campos antes de volver al menu de inicio
+            txtUsuarioLogin.setText("");
+            txtPasswordLogin.setText("");
+
             cardLayout.show(panelPrincipal, "Inicio");
         });
     }
 
     // Pantalla de registro con usuario, contraseña y boton aceptar
     private void crearPantallaRegistro() {
-        JPanel registroPanel = new JPanel(new GridLayout(7, 1, 5, 5)); // Aumentamos de 6 a 7 filas
+        JPanel registroPanel = new JPanel(new GridLayout(7, 1, 5, 5)); // Mantengo el formato sin cambios
 
         txtUsuarioRegistro = new JTextField();
         txtPasswordRegistro = new JPasswordField();
         chkMostrarContraseñaRegistro = new JCheckBox("Mostrar Contraseña");
         JButton btnAceptarRegistro = new JButton("Aceptar");
-        JButton btnCancelarRegistro = new JButton("Cancelar");  // Botón de cancelar
+        JButton btnCancelarRegistro = new JButton("Cancelar");
 
         registroPanel.add(new JLabel("Usuario:"));
         registroPanel.add(txtUsuarioRegistro);
@@ -151,45 +156,50 @@ public class InterfazBlackjack extends JFrame {
         registroPanel.add(txtPasswordRegistro);
         registroPanel.add(chkMostrarContraseñaRegistro);
         registroPanel.add(btnAceptarRegistro);
-        registroPanel.add(btnCancelarRegistro);  // Agregar botón de cancelar
+        registroPanel.add(btnCancelarRegistro);
 
         panelPrincipal.add(registroPanel, "Registro");
 
+        // Mostrar u ocultar contraseña
         chkMostrarContraseñaRegistro.addActionListener(e -> {
-            if (chkMostrarContraseñaRegistro.isSelected()) {
-                txtPasswordRegistro.setEchoChar((char) 0);
-            } else {
-                txtPasswordRegistro.setEchoChar('*');
-            }
+            txtPasswordRegistro.setEchoChar(chkMostrarContraseñaRegistro.isSelected() ? (char) 0 : '*');
         });
 
+        // Validacion antes de permitir el registro
         btnAceptarRegistro.addActionListener(e -> {
-            String usuario = txtUsuarioRegistro.getText();
-            String contraseña = new String(txtPasswordRegistro.getPassword());
+            String usuario = txtUsuarioRegistro.getText().trim();
+            String contraseña = new String(txtPasswordRegistro.getPassword()).trim();
 
-            if (blackjackService.buscarJugadorPorNombre(usuario) != null) {
-                JOptionPane.showMessageDialog(this, "El usuario ya existe.");
+            if (usuario.isEmpty() || contraseña.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Debes completar ambos campos para registrarte.");
                 return;
             }
 
-            Jugador nuevoJugador = new Jugador();
-            nuevoJugador.setNombre(usuario);
-            nuevoJugador.setContraseña(contraseña);
-            nuevoJugador.setDinero(100); // dinero inicial
+            if (blackjackService.buscarJugadorPorNombre(usuario) != null) {
+                JOptionPane.showMessageDialog(this, "El usuario ya existe. Elige otro.");
+                return;
+            }
 
+            // Se crea y guarda el nuevo usuario sin cambiar el flujo visual
+            Jugador nuevoJugador = new Jugador(usuario, contraseña, 100);
             try {
                 blackjackService.guardarJugador(nuevoJugador);
-                JOptionPane.showMessageDialog(this, "Registro completado. Por favor inicia sesión.");
+                JOptionPane.showMessageDialog(this, "Registro exitoso. Por favor inicia sesión.");
                 cardLayout.show(panelPrincipal, "Inicio");
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(this, "Error al registrar el usuario.");
             }
         });
 
-        // Acción del botón Cancelar: vuelve al menú inicial
+        // Accion del boton cancelar
         btnCancelarRegistro.addActionListener(e -> {
+            // Limpia los campos antes de volver al menu de inicio
+            txtUsuarioRegistro.setText("");
+            txtPasswordRegistro.setText("");
+
             cardLayout.show(panelPrincipal, "Inicio");
         });
+
     }
 
     private void crearMenuJuego() {
@@ -479,17 +489,22 @@ public class InterfazBlackjack extends JFrame {
         lblApuesta.setText("Apuesta: 0");
         btnGuardarPartida.setVisible(true);
 
-        // Si el jugador se queda sin dinero, guardamos la partida automáticamente con saldo 0.
+        reiniciarManos();
+
+        lblDinero.setText("Dinero disponible: " + dineroJugador);
+        btnGuardarPartida.setVisible(true);
+
+        // Si el jugador se queda sin dinero, guardamos la partida automaticamente con saldo 0.
         if (dineroJugador <= 0) {
             dineroJugador = 0;
             lblDinero.setText("Dinero disponible: " + dineroJugador);
             JOptionPane.showMessageDialog(this, "No tienes más dinero para apostar. Juego terminado.");
 
             Jugador jugador = blackjackService.buscarJugadorPorNombre(txtUsuarioLogin.getText());
-            // Guarda automáticamente la partida con saldo 0 y la finaliza.
+            // Guarda automaticamente la partida con saldo 0 y la finaliza.
             blackjackService.finalizarPartidaAbierta(jugador);
 
-            // Redirige al menú principal para forzar la creación de una nueva partida.
+            // Redirige al menu principal para forzar la creacion de una nueva partida.
             cardLayout.show(panelPrincipal, "MenuJuego");
             btnGuardarPartida.setVisible(false);
             return;
