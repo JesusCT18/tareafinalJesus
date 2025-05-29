@@ -3,10 +3,10 @@ package View;
 import java.awt.*;
 import javax.swing.*;
 
-public class MyBackgroundPanel extends JPanel {
+public class PanelDeFondo extends JPanel {
     private Image background;
 
-    public MyBackgroundPanel(Image background) {
+    public PanelDeFondo (Image background) {
         this.background = background;
         setOpaque(false);
     }

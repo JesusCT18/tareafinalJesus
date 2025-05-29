@@ -1,10 +1,5 @@
--- Eliminar tablas si existen previamente
+-- Eliminar base de datos si existen previamente
 DROP DATABASE IF EXISTS BlackjackDB;
-DROP TABLE IF EXISTS ManoJugador;
-DROP TABLE IF EXISTS Cartas;
-DROP TABLE IF EXISTS Partidas;
-DROP TABLE IF EXISTS Jugadores;
-
 -- Crear la base de datos
 CREATE DATABASE BlackjackDB;
 USE BlackjackDB;
@@ -19,15 +14,12 @@ CREATE TABLE Jugadores (
 
 -- Partidas jugadas por el jugador
 CREATE TABLE Partidas (
-    id_partida INT PRIMARY KEY AUTO_INCREMENT,
-    id_jugador INT NOT NULL,
-    fecha DATETIME DEFAULT CURRENT_TIMESTAMP,
-    total_apostado INT DEFAULT 0,
-    total_ganado INT DEFAULT 0,
-    total_perdido INT DEFAULT 0,
-    dinero_actual INT DEFAULT 0,
-    estado VARCHAR(50) DEFAULT 'En curso',
-    FOREIGN KEY (id_jugador) REFERENCES Jugadores(id_jugador) ON DELETE CASCADE
+  id_partida INT AUTO_INCREMENT PRIMARY KEY,
+  id_jugador INT NOT NULL,
+  fecha DATETIME DEFAULT CURRENT_TIMESTAMP,
+  dinero_actual INT NOT NULL,
+  estado VARCHAR(50) DEFAULT 'En curso',
+  FOREIGN KEY (id_jugador) REFERENCES Jugadores(id_jugador)
 );
 
 -- Cartas usadas en el juego (sin imágenes, con valores correctos)
@@ -59,10 +51,13 @@ CREATE TABLE ManoJugador (
     id_partida INT NOT NULL,
     id_jugador INT NOT NULL,
     id_carta INT NOT NULL,
+    es_jugador BOOLEAN NOT NULL DEFAULT TRUE,
+    nombre_carta VARCHAR(50),
     FOREIGN KEY (id_partida) REFERENCES Partidas(id_partida) ON DELETE CASCADE,
     FOREIGN KEY (id_jugador) REFERENCES Jugadores(id_jugador) ON DELETE CASCADE,
     FOREIGN KEY (id_carta) REFERENCES Cartas(id_carta) ON DELETE CASCADE
 );
+
 
 
 

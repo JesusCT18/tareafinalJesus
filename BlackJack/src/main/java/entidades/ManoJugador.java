@@ -2,6 +2,8 @@ package entidades;
 
 import entidades.Jugador;
 import entidades.Partida;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import javax.persistence.*;
 
@@ -13,36 +15,32 @@ public class ManoJugador {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_mano")
     private int id_mano;
-    
+
     @ManyToOne(optional = false)
     @JoinColumn(name = "id_jugador", nullable = false)
-    private Jugador jugador; 
+    private Jugador jugador;
 
     @ManyToOne(optional = false)
     @JoinColumn(name = "id_partida", nullable = false)
-    private Partida partida; 
+    private Partida partida;
 
-    @ManyToOne(optional = false)
-    @JoinColumn(name = "id_carta", nullable = false)
-    private Carta carta; 
-    
+    @ElementCollection
+    @CollectionTable(name = "mano_jugador_valores", joinColumns = @JoinColumn(name = "id_mano"))
+    @Column(name = "valor")
+    private List<Integer> manoJugador = new ArrayList<>();
+
     @Column(name = "es_jugador", nullable = false)
     private boolean es_jugador;
-    
-    // Campo opcional para almacenar el nombre de la carta.
-    @Column(name = "nombre_carta")
-    private String nombreCarta;
 
     public ManoJugador() {
     }
 
-    public ManoJugador(int id_mano, Jugador jugador, Partida partida, Carta carta, boolean es_jugador, String nombreCarta) {
+    
+    public ManoJugador(int id_mano, Jugador jugador, Partida partida, boolean es_jugador) {
         this.id_mano = id_mano;
         this.jugador = jugador;
         this.partida = partida;
-        this.carta = carta;
         this.es_jugador = es_jugador;
-        this.nombreCarta = nombreCarta;
     }
 
     public int getId_mano() {
@@ -69,12 +67,12 @@ public class ManoJugador {
         this.partida = partida;
     }
 
-    public Carta getCarta() {
-        return carta;
+    public List<Integer> getManoJugador() {
+        return manoJugador;
     }
 
-    public void setCarta(Carta carta) {
-        this.carta = carta;
+    public void setManoJugador(List<Integer> manoJugador) {
+        this.manoJugador = manoJugador;
     }
 
     public boolean isEs_jugador() {
@@ -85,31 +83,19 @@ public class ManoJugador {
         this.es_jugador = es_jugador;
     }
 
-    public String getNombreCarta() {
-        return nombreCarta;
-    }
-
-    public void setNombreCarta(String nombreCarta) {
-        this.nombreCarta = nombreCarta;
-    }
-
     @Override
     public String toString() {
-        return "ManoJugador{" + "id_mano=" + id_mano 
-                + ", jugador=" + jugador + ", partida=" 
-                + partida + ", carta=" + carta + ", es_jugador=" 
-                + es_jugador + ", nombreCarta=" + nombreCarta + '}';
+        return "ManoJugador{" + "id_mano=" + id_mano + ", jugador=" + jugador + ", partida=" + partida + ", manoJugador=" + manoJugador + ", es_jugador=" + es_jugador + '}';
     }
-    
+
     @Override
     public int hashCode() {
         int hash = 5;
-        hash = 47 * hash + this.id_mano;
-        hash = 47 * hash + Objects.hashCode(this.jugador);
-        hash = 47 * hash + Objects.hashCode(this.partida);
-        hash = 47 * hash + Objects.hashCode(this.carta);
-        hash = 47 * hash + (this.es_jugador ? 1 : 0);
-        hash = 47 * hash + Objects.hashCode(this.nombreCarta);
+        hash = 89 * hash + this.id_mano;
+        hash = 89 * hash + Objects.hashCode(this.jugador);
+        hash = 89 * hash + Objects.hashCode(this.partida);
+        hash = 89 * hash + Objects.hashCode(this.manoJugador);
+        hash = 89 * hash + (this.es_jugador ? 1 : 0);
         return hash;
     }
 
@@ -131,17 +117,12 @@ public class ManoJugador {
         if (this.es_jugador != other.es_jugador) {
             return false;
         }
-        if (!Objects.equals(this.nombreCarta, other.nombreCarta)) {
-            return false;
-        }
         if (!Objects.equals(this.jugador, other.jugador)) {
             return false;
         }
         if (!Objects.equals(this.partida, other.partida)) {
             return false;
         }
-        return Objects.equals(this.carta, other.carta);
+        return Objects.equals(this.manoJugador, other.manoJugador);
     }
-
-    
 }

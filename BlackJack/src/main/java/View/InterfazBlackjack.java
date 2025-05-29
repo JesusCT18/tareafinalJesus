@@ -1,6 +1,5 @@
 package View;
 
-import Controller.BlackjackService;
 import entidades.Carta;
 import entidades.Jugador;
 import entidades.ManoJugador;
@@ -10,6 +9,10 @@ import java.awt.*;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import Controller.BlackjackService;
+import Controller.BlackjackService.ManoJugadorService;
+import Controller.JugadorService;
+import Controller.PartidaService;
 
 public class InterfazBlackjack extends JFrame {
 
@@ -17,7 +20,10 @@ public class InterfazBlackjack extends JFrame {
     private JPanel panelPrincipal;
 
     // Conexion con la base de datos
-    private BlackjackService blackjackService;
+    private BlackjackService blackjackService = new BlackjackService();
+    private ManoJugadorService manoJugadorService = new ManoJugadorService();
+    private JugadorService jugadorService;
+    private PartidaService partidaService;
 
     // Componentes login
     private JTextField txtUsuarioLogin;
@@ -30,6 +36,8 @@ public class InterfazBlackjack extends JFrame {
     private JCheckBox chkMostrarContraseñaRegistro;
 
     // Componentes juego
+    private Jugador jugadorActual;
+    private Partida partidaActual;
     private ArrayList<Integer> manoJugador;
     private ArrayList<Integer> manoBanca;
     private JButton btnIniciarSesion, btnRegistrarse, btnSalirInicio,
@@ -42,14 +50,20 @@ public class InterfazBlackjack extends JFrame {
     private int apuestaActual = 0; // Apuesta actual
 
     public InterfazBlackjack() {
+        // Inicializar servicios
         blackjackService = new BlackjackService();
+        jugadorService = new JugadorService();
+        partidaService = new PartidaService();
+        manoJugadorService = new ManoJugadorService(); // Si la tienes definida
+
+        // Configuracion de la ventana
         setTitle("Blackjack");
         setSize(800, 600);  // Tamaño fijo en lugar de pantalla completa
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
         setResizable(false);
 
-        // Configuración principal con CardLayout para cambiar pantallas
+        // Configuracion principal con CardLayout para cambiar pantallas
         cardLayout = new CardLayout();
         panelPrincipal = new JPanel(cardLayout);
         add(panelPrincipal);
@@ -65,11 +79,12 @@ public class InterfazBlackjack extends JFrame {
         cardLayout.show(panelPrincipal, "Inicio");
     }
 
+    // ---Creacion de Menus con sus contenidos---
     // Menu inicial con opciones Iniciar Sesion, Registrarse y Salir
     private void crearMenuInicio() {
-        // Se carga el GIF de fondo "fondo2.gif" y se crea el panel auxiliar para el fondo.
+        // Se carga el GIF de fondo "fondo1.gif" y se crea el panel auxiliar para el fondo.
         ImageIcon fondoIcon = new ImageIcon(getClass().getResource("/fondo1.gif"));
-        MyBackgroundPanel backgroundPanel = new MyBackgroundPanel(fondoIcon.getImage());
+        PanelDeFondo backgroundPanel = new PanelDeFondo(fondoIcon.getImage());
         backgroundPanel.setLayout(new BorderLayout());
 
         // Se crea el panel original con GridLayout para los botones
@@ -239,7 +254,7 @@ public class InterfazBlackjack extends JFrame {
     private void crearMenuJuego() {
         // Se carga el GIF de fondo "fondo2.gif" y se crea un MyBackgroundPanel
         ImageIcon fondoIcon = new ImageIcon(getClass().getResource("/fondo2.gif"));
-        MyBackgroundPanel backgroundPanel = new MyBackgroundPanel(fondoIcon.getImage());
+        PanelDeFondo backgroundPanel = new PanelDeFondo(fondoIcon.getImage());
         backgroundPanel.setLayout(new BorderLayout());
 
         // Se crea el panel original (con GridLayout) para los botones y se configura como transparente
@@ -295,26 +310,32 @@ public class InterfazBlackjack extends JFrame {
             Jugador jugador = blackjackService.buscarJugadorPorNombre(txtUsuarioLogin.getText());
             Partida partidaGuardada = blackjackService.buscarPartidaAbierta(jugador);
 
-            // Si no se encuentra o la partida tiene saldo 0, se redirige de vuelta al menú
+            // Si no se encuentra o la partida tiene saldo 0, se redirige de vuelta al menú.
             if (partidaGuardada == null || partidaGuardada.getDineroActual() <= 0) {
                 JOptionPane.showMessageDialog(this, "Tu dinero actual es 0, crea una nueva partida.");
                 cardLayout.show(panelPrincipal, "MenuJuego");
                 return;
             }
 
-            // Si existe partida, se carga normalmente
+            // Si existe partida, se carga normalmente:
             dineroJugador = partidaGuardada.getDineroActual();
             apuestaActual = 0;
 
             List<ManoJugador> manos = blackjackService.cargarManosDePartida(partidaGuardada.getIdPartida());
             manoJugador = new ArrayList<>();
             manoBanca = new ArrayList<>();
+
+            // Recorremos todos los registros de ManoJugador que se han cargado.
             for (ManoJugador mano : manos) {
-                int valorCarta = mano.getCarta().getValor() > 10 ? 10 : mano.getCarta().getValor();
-                if (mano.isEs_jugador()) {
-                    manoJugador.add(valorCarta);
-                } else {
-                    manoBanca.add(valorCarta);
+                // Obtiene la lista de enteros almacenada en la entidad.
+                for (Integer cartaValor : mano.getManoJugador()) {
+                    // Si el valor es mayor a 10, lo transforma a 10.
+                    int valorCarta = cartaValor > 10 ? 10 : cartaValor;
+                    if (mano.isEs_jugador()) {
+                        manoJugador.add(valorCarta);
+                    } else {
+                        manoBanca.add(valorCarta);
+                    }
                 }
             }
 
@@ -333,18 +354,19 @@ public class InterfazBlackjack extends JFrame {
         btnSalirMenuJuego.addActionListener(e -> cardLayout.show(panelPrincipal, "Inicio"));
     }
 
+    // ---Creacion de la mesa del juego y sus componentes para que funcione---
     // Pantalla principal del juego: muestra cartas, suma, dinero y botones de accion
     private void crearMesaJuego() {
         // Se carga el GIF de fondo ("/fondo.gif") y se crea un MyBackgroundPanel.
         // Se usa URL para verificar que la imagen exista.
         URL gifURL = getClass().getResource("/fondo.gif");
-        MyBackgroundPanel mesaPanel;
+        PanelDeFondo mesaPanel;
         if (gifURL == null) {
             System.err.println("❌No se encontró el GIF en /fondo.gif");
-            mesaPanel = new MyBackgroundPanel(null);
+            mesaPanel = new PanelDeFondo(null);
         } else {
             ImageIcon fondoIcon = new ImageIcon(gifURL);
-            mesaPanel = new MyBackgroundPanel(fondoIcon.getImage());
+            mesaPanel = new PanelDeFondo(fondoIcon.getImage());
         }
         mesaPanel.setLayout(new BorderLayout(20, 20)); // Espacio entre componentes
 
@@ -607,9 +629,9 @@ public class InterfazBlackjack extends JFrame {
         int sumaBanca = calcularSuma(manoBanca);
 
         if (sumaJugador > 21) {
-            return "Perdió"; // jugador se pasó
+            return "Perdió"; // jugador se paso
         } else if (sumaBanca > 21) {
-            return "Ganó"; // banca se pasó
+            return "Ganó"; // banca se paso
         } else if (sumaJugador > sumaBanca) {
             return "Ganó";
         } else if (sumaJugador == sumaBanca) {
@@ -654,23 +676,35 @@ public class InterfazBlackjack extends JFrame {
     // Guardar partida
     private void guardarPartida() {
         String nombreUsuario = txtUsuarioLogin.getText();
-        Jugador jugador = blackjackService.buscarJugadorPorNombre(nombreUsuario);
+        Jugador jugador = jugadorService.buscarJugadorPorNombre(nombreUsuario);
         if (jugador == null) {
             JOptionPane.showMessageDialog(this, "Debe iniciar sesión para guardar la partida.");
             return;
         }
 
         int dineroAntes = jugador.getDinero();
-        int dineroDespues = dineroJugador;
+        int dineroDespues = dineroJugador; // 'dineroJugador' es la variable de la interfaz
         int dineroCambiado = dineroDespues - dineroAntes;
 
         try {
             List<Integer> manoJugadorValores = new ArrayList<>(manoJugador);
             List<Integer> manoBancaValores = new ArrayList<>(manoBanca);
 
-            // Aquí pasamos true para Nueva Partida, de forma que se cree una nueva instancia.
+            // Guarda la partida completa (este método lo tienes en tu blackjackService o lo puedes integrar)
             blackjackService.guardarPartidaCompleta(jugador, dineroCambiado,
                     manoJugadorValores, manoBancaValores, true);
+
+            // Asigna el jugador y la partida actuales
+            this.jugadorActual = jugador;
+            // Recupera la partida abierta para el jugador
+            this.partidaActual = partidaService.buscarPartidaAbierta(jugador);
+            if (this.partidaActual == null) {
+                JOptionPane.showMessageDialog(this, "No se encontró una partida activa.");
+                return;
+            }
+
+            // Guarda la mano del jugador
+            guardarManoDelJugador();
 
             JOptionPane.showMessageDialog(this, "Partida guardada correctamente.");
         } catch (Exception ex) {
@@ -691,6 +725,27 @@ public class InterfazBlackjack extends JFrame {
             btnGuardarPartida.setVisible(false);
             reiniciarManos();
         }
+    }
+
+    private void guardarManoDelJugador() {
+        if (jugadorActual == null || partidaActual == null) {
+            JOptionPane.showMessageDialog(this, "No se ha inicializado el jugador o la partida.");
+            return;
+        }
+
+        System.out.println("DEBUG: jugadorActual = " + jugadorActual);
+        System.out.println("DEBUG: partidaActual = " + partidaActual);
+        System.out.println("DEBUG: manoJugador = " + manoJugador);
+
+        ManoJugador mano = new ManoJugador();
+        mano.setManoJugador(new ArrayList<>(manoJugador));
+        mano.setJugador(jugadorActual);
+        mano.setPartida(partidaActual);
+        mano.setEs_jugador(true);
+
+        System.out.println("DEBUG: Objeto ManoJugador a persistir = " + mano);
+
+        manoJugadorService.guardarMano(mano); // O usa el método directo de persistencia.
     }
 
     // Main
