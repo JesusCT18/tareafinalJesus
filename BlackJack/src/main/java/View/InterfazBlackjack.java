@@ -13,6 +13,7 @@ import Controller.BlackjackService;
 import Controller.BlackjackService.ManoJugadorService;
 import Controller.JugadorService;
 import Controller.PartidaService;
+import java.util.stream.Collectors;
 
 public class InterfazBlackjack extends JFrame {
 
@@ -36,6 +37,7 @@ public class InterfazBlackjack extends JFrame {
     private JCheckBox chkMostrarContraseñaRegistro;
 
     // Componentes juego
+    private ManoJugador manoActual;
     private Jugador jugadorActual;
     private Partida partidaActual;
     private ArrayList<Integer> manoJugador;
@@ -480,6 +482,13 @@ public class InterfazBlackjack extends JFrame {
         lblSumaBanca.setText("Suma banca: 0");
 
         btnGuardarPartida.setVisible(false);
+
+        // Inicializamos manoActual para que permanezca durante toda la partida
+        manoActual = new ManoJugador();
+        manoActual.setJugador(jugadorActual);
+        manoActual.setPartida(partidaActual);
+        manoActual.setEs_jugador(true);
+        manoActual.setIdCartas(new ArrayList<>()); // Asegurar que la lista esté vacía al inicio
     }
 
     // Mostrar dialogo para elegir apuesta, validar cantidad y actualizar
@@ -528,10 +537,37 @@ public class InterfazBlackjack extends JFrame {
 
     // Inicia reparto de cartas 
     private void pedirCartaJugador() {
-        int carta = pedirCartaDesdeService();
-        manoJugador.add(carta);
+        // Se obtiene el objeto Carta (en lugar de solo int)
+        Carta cartaObtenida = blackjackService.obtenerCartaAleatoria();
+        if (cartaObtenida == null) {
+            JOptionPane.showMessageDialog(this, "No se pudo obtener una carta.");
+            return;
+        }
+
+        // Obtener el valor de la carta (reduciendo a 10 si procede)
+        int valor = cartaObtenida.getValor();
+        if (valor > 10) {
+            valor = 10;
+        }
+
+        // Agregar el valor a la lista del jugador (para mostrar en la interfaz)
+        manoJugador.add(valor);
         lblCartasJugador.setText("Cartas jugador: " + manoJugador);
         actualizarSuma(manoJugador, lblSumaJugador);
+
+        // Asegurar que manoActual se mantenga durante toda la partida
+        if (manoActual == null) {
+            System.out.println("DEBUG: manoActual es null, inicializando nueva instancia.");
+            manoActual = new ManoJugador();
+            manoActual.setJugador(jugadorActual);
+            manoActual.setPartida(partidaActual);
+            manoActual.setEs_jugador(true);
+            manoActual.setIdCartas(new ArrayList<>());
+        }
+
+        // Agregar el ID de la carta a la lista de manoActual (acumulando correctamente)
+        manoActual.getIdCartas().add(cartaObtenida.getIdCarta());
+        System.out.println("DEBUG - Lista de cartas acumuladas en manoActual: " + manoActual.getIdCartas());
 
         int suma = calcularSuma(manoJugador);
         if (suma > 21) {
@@ -539,19 +575,15 @@ public class InterfazBlackjack extends JFrame {
             apuestaActual = 0;
             lblApuesta.setText("Apuesta: 0");
 
-            // Si se pasó de 21, se verifica si el jugador se quedó sin dinero.
+            // Si el jugador se queda sin dinero, se guarda la partida y se reinicia el juego
             if (dineroJugador <= 0) {
                 JOptionPane.showMessageDialog(this, "No tienes más dinero para apostar. Juego terminado.");
-
-                // Recupera el jugador y guarda la partida automáticamente con saldo 0.
-                Jugador jugador = blackjackService.buscarJugadorPorNombre(txtUsuarioLogin.getText());
-                blackjackService.finalizarPartidaAbierta(jugador);
+                guardarManoDelJugador(); // Guardar los datos antes de salir
 
                 // Redirige al menú principal para forzar la creación de una nueva partida.
                 cardLayout.show(panelPrincipal, "MenuJuego");
                 btnGuardarPartida.setVisible(false);
             } else {
-                // Si aún tiene dinero, reinicia las manos para continuar el juego.
                 reiniciarManos();
                 lblDinero.setText("Dinero disponible: " + dineroJugador);
                 btnGuardarPartida.setVisible(true);
@@ -586,7 +618,7 @@ public class InterfazBlackjack extends JFrame {
         int sumaJugador = calcularSuma(manoJugador);
         int sumaBanca = calcularSuma(manoBanca);
 
-        // Evaluación del resultado de la ronda.
+        // Evaluacion del resultado de la ronda.
         if (sumaBanca > 21) {
             JOptionPane.showMessageDialog(this, "La banca se pasó de 21. ¡Ganaste!");
             dineroJugador += apuestaActual * 2;
@@ -602,12 +634,15 @@ public class InterfazBlackjack extends JFrame {
         lblApuesta.setText("Apuesta: 0");
         btnGuardarPartida.setVisible(true);
 
-        reiniciarManos();
+        // Llamada al metodo
+        finalizarPartida();
 
+        // Luego se reinician las manos para continuar o finalizar el juego.
+        reiniciarManos();
         lblDinero.setText("Dinero disponible: " + dineroJugador);
         btnGuardarPartida.setVisible(true);
 
-        // Si el jugador se queda sin dinero, guardamos la partida automaticamente con saldo 0.
+        // Si el jugador se queda sin dinero, se guarda la partida automáticamente con saldo 0.
         if (dineroJugador <= 0) {
             dineroJugador = 0;
             lblDinero.setText("Dinero disponible: " + dineroJugador);
@@ -617,7 +652,7 @@ public class InterfazBlackjack extends JFrame {
             // Guarda automaticamente la partida con saldo 0 y la finaliza.
             blackjackService.finalizarPartidaAbierta(jugador);
 
-            // Redirige al menu principal para forzar la creacion de una nueva partida.
+            // Redirige al menu principal para forzar la creación de una nueva partida.
             cardLayout.show(panelPrincipal, "MenuJuego");
             btnGuardarPartida.setVisible(false);
             return;
@@ -743,9 +778,33 @@ public class InterfazBlackjack extends JFrame {
         mano.setPartida(partidaActual);
         mano.setEs_jugador(true);
 
-        System.out.println("DEBUG: Objeto ManoJugador a persistir = " + mano);
+        // Obtener la carta aleatoria usando el método en BlackjackService.
+        Carta cartaAleatoria = blackjackService.obtenerCartaAleatoria();
+        if (cartaAleatoria == null) {
+            JOptionPane.showMessageDialog(this, "No se pudo obtener una carta aleatoria.");
+            return;
+        }
 
-        manoJugadorService.guardarMano(mano); // O usa el método directo de persistencia.
+        // Agregar el ID de la carta a la lista idCartas
+        mano.getIdCartas().add(cartaAleatoria.getIdCarta());
+
+        System.out.println("DEBUG: Objeto ManoJugador a persistir = " + mano);
+        manoJugadorService.guardarMano(mano);
+    }
+
+    private void finalizarPartida() {
+        if (manoActual.getIdCartas().isEmpty()) {
+            System.out.println("ERROR: No hay cartas registradas para guardar.");
+            return;
+        }
+
+        // Antes de guardar, verificamos la cadena generada por el convertidor
+        String cadenaCartas = manoActual.getIdCartas().stream()
+                .map(String::valueOf)
+                .collect(Collectors.joining(","));
+        System.out.println("DEBUG - Cadena generada para id_carta: " + cadenaCartas);
+
+        manoJugadorService.guardarMano(manoActual);
     }
 
     // Main

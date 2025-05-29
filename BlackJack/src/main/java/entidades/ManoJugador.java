@@ -24,6 +24,11 @@ public class ManoJugador {
     @JoinColumn(name = "id_partida", nullable = false)
     private Partida partida;
 
+    // Eliminamos el anterior "Carta carta;" y definimos una colección:
+    @Column(name = "id_carta", length = 255)
+    @Convert(converter = Controller.IntegerListConverter.class)
+    private List<Integer> idCartas = new ArrayList<>();
+
     @ElementCollection
     @CollectionTable(name = "mano_jugador_valores", joinColumns = @JoinColumn(name = "id_mano"))
     @Column(name = "valor")
@@ -35,7 +40,6 @@ public class ManoJugador {
     public ManoJugador() {
     }
 
-    
     public ManoJugador(int id_mano, Jugador jugador, Partida partida, boolean es_jugador) {
         this.id_mano = id_mano;
         this.jugador = jugador;
@@ -67,6 +71,14 @@ public class ManoJugador {
         this.partida = partida;
     }
 
+    public List<Integer> getIdCartas() {
+        return idCartas;
+    }
+
+    public void setIdCartas(List<Integer> idCartas) {
+        this.idCartas = idCartas;
+    }
+
     public List<Integer> getManoJugador() {
         return manoJugador;
     }
@@ -85,17 +97,18 @@ public class ManoJugador {
 
     @Override
     public String toString() {
-        return "ManoJugador{" + "id_mano=" + id_mano + ", jugador=" + jugador + ", partida=" + partida + ", manoJugador=" + manoJugador + ", es_jugador=" + es_jugador + '}';
+        return "ManoJugador{" + "id_mano=" + id_mano + ", jugador=" + jugador + ", partida=" + partida + ", idCartas=" + idCartas + ", manoJugador=" + manoJugador + ", es_jugador=" + es_jugador + '}';
     }
 
     @Override
     public int hashCode() {
-        int hash = 5;
-        hash = 89 * hash + this.id_mano;
-        hash = 89 * hash + Objects.hashCode(this.jugador);
-        hash = 89 * hash + Objects.hashCode(this.partida);
-        hash = 89 * hash + Objects.hashCode(this.manoJugador);
-        hash = 89 * hash + (this.es_jugador ? 1 : 0);
+        int hash = 3;
+        hash = 29 * hash + this.id_mano;
+        hash = 29 * hash + Objects.hashCode(this.jugador);
+        hash = 29 * hash + Objects.hashCode(this.partida);
+        hash = 29 * hash + Objects.hashCode(this.idCartas);
+        hash = 29 * hash + Objects.hashCode(this.manoJugador);
+        hash = 29 * hash + (this.es_jugador ? 1 : 0);
         return hash;
     }
 
@@ -123,6 +136,10 @@ public class ManoJugador {
         if (!Objects.equals(this.partida, other.partida)) {
             return false;
         }
+        if (!Objects.equals(this.idCartas, other.idCartas)) {
+            return false;
+        }
         return Objects.equals(this.manoJugador, other.manoJugador);
     }
+
 }
