@@ -7,7 +7,6 @@ import entidades.Jugador;
 import entidades.Partida;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Objects;
 import javax.persistence.*;
 
 public class BlackjackService {
