@@ -2,7 +2,6 @@ package Controller;
 
 import entidades.Jugador;
 import entidades.Partida;
-import java.time.LocalDateTime;
 import java.util.List;
 import javax.persistence.*;
 

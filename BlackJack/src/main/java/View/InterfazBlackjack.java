@@ -82,6 +82,7 @@ public class InterfazBlackjack extends JFrame {
     }
 
     // ---Creacion de Menus con sus contenidos---
+    
     // Menu inicial con opciones Iniciar Sesion, Registrarse y Salir
     private void crearMenuInicio() {
         // Se carga el GIF de fondo "fondo1.gif" y se crea el panel auxiliar para el fondo.
@@ -357,6 +358,7 @@ public class InterfazBlackjack extends JFrame {
     }
 
     // ---Creacion de la mesa del juego y sus componentes para que funcione---
+    
     // Pantalla principal del juego: muestra cartas, suma, dinero y botones de accion
     private void crearMesaJuego() {
         // Se carga el GIF de fondo ("/fondo.gif") y se crea un MyBackgroundPanel.
@@ -462,7 +464,7 @@ public class InterfazBlackjack extends JFrame {
                 JOptionPane.showMessageDialog(this, "Debes elegir una apuesta antes de jugar.");
                 return;
             }
-            plantarse();
+            turnoBanca();
         });
 
         btnGuardarPartida.addActionListener(e -> guardarPartida());
@@ -537,52 +539,6 @@ public class InterfazBlackjack extends JFrame {
         dialog.setVisible(true);
     }
 
-    private void plantarse() {
-        // Turno de la banca: repartir cartas hasta que la suma sea ≥ 17.
-        manoBanca = new ArrayList<>();
-        while (calcularSuma(manoBanca) < 17) {
-            manoBanca.add(pedirCartaDesdeService());
-        }
-
-        // Actualizamos la interfaz con las cartas y la suma de la banca.
-        lblCartasBanca.setText("Cartas banca: " + manoBanca);
-        actualizarSuma(manoBanca, lblSumaBanca);
-
-        // Comparación de sumas y actualización de saldo.
-        int sumaJugador = calcularSuma(manoJugador);
-        int sumaBanca = calcularSuma(manoBanca);
-
-        if (sumaBanca > 21) {
-            JOptionPane.showMessageDialog(this, "La banca se pasó de 21. ¡Ganaste!");
-            dineroJugador += apuestaActual * 2;
-        } else if (sumaBanca >= sumaJugador) {
-            JOptionPane.showMessageDialog(this, "La banca ganó. Perdiste la apuesta.");
-        } else {
-            JOptionPane.showMessageDialog(this, "¡Ganaste!");
-            dineroJugador += apuestaActual * 2;
-        }
-
-        // Actualizamos el saldo mostrado.
-        lblDinero.setText("Dinero disponible: " + dineroJugador);
-        apuestaActual = 0;
-        lblApuesta.setText("Apuesta: 0");
-        btnGuardarPartida.setVisible(true);
-
-        // Llamada para guardar la mano del jugador: 
-        guardarManoDelJugador();
-
-        // Reinicia las listas para la siguiente jugada
-        reiniciarManos();
-
-        // Si ya no tiene dinero, finaliza la partida.
-        if (dineroJugador <= 0) {
-            JOptionPane.showMessageDialog(this, "No tienes más dinero para apostar. Juego terminado.");
-            blackjackService.finalizarPartidaAbierta(jugadorActual);
-            cardLayout.show(panelPrincipal, "MenuJuego");
-            btnGuardarPartida.setVisible(false);
-        }
-    }
-
     // Inicia reparto de cartas 
     private void pedirCartaJugador() {
         // Se obtiene el objeto Carta (en lugar de solo int)
@@ -639,6 +595,7 @@ public class InterfazBlackjack extends JFrame {
         }
     }
 
+    // Pedir cartas desde el service
     private int pedirCartaDesdeService() {
         Carta carta = blackjackService.obtenerCartaAleatoria();
         int valor = carta.getValor();
@@ -663,11 +620,14 @@ public class InterfazBlackjack extends JFrame {
         lblCartasBanca.setText("Cartas banca: " + manoBanca);
         actualizarSuma(manoBanca, lblSumaBanca);
 
+        // Calcula sumas
         int sumaJugador = calcularSuma(manoJugador);
         int sumaBanca = calcularSuma(manoBanca);
 
-        // Evaluacion del resultado de la ronda.
-        if (sumaBanca > 21) {
+        // Decide resultado 
+        if (sumaJugador > 21) {
+            JOptionPane.showMessageDialog(this, "¡Te pasaste de 21! Perdiste.");
+        } else if (sumaBanca > 21) {
             JOptionPane.showMessageDialog(this, "La banca se pasó de 21. ¡Ganaste!");
             dineroJugador += apuestaActual * 2;
         } else if (sumaBanca >= sumaJugador) {
@@ -677,53 +637,28 @@ public class InterfazBlackjack extends JFrame {
             dineroJugador += apuestaActual * 2;
         }
 
+        // Actualiza la interfaz
         lblDinero.setText("Dinero disponible: " + dineroJugador);
         apuestaActual = 0;
         lblApuesta.setText("Apuesta: 0");
         btnGuardarPartida.setVisible(true);
 
-        // Llamada al metodo
-        finalizarPartida();
+        if (partidaActual != null) {
+            guardarManoDelJugador();
+        }
 
-        // Luego se reinician las manos para continuar o finalizar el juego.
+        // Reiniciar manos para la siguiente ronda
         reiniciarManos();
-        lblDinero.setText("Dinero disponible: " + dineroJugador);
-        btnGuardarPartida.setVisible(true);
 
-        // Si el jugador se queda sin dinero, se guarda la partida automáticamente con saldo 0.
+        // Si se quedo sin dinero, finalizar partida
         if (dineroJugador <= 0) {
-            dineroJugador = 0;
-            lblDinero.setText("Dinero disponible: " + dineroJugador);
             JOptionPane.showMessageDialog(this, "No tienes más dinero para apostar. Juego terminado.");
-
-            Jugador jugador = blackjackService.buscarJugadorPorNombre(txtUsuarioLogin.getText());
-            // Guarda automaticamente la partida con saldo 0 y la finaliza.
-            blackjackService.finalizarPartidaAbierta(jugador);
-
-            // Redirige al menu principal para forzar la creación de una nueva partida.
+            blackjackService.finalizarPartidaAbierta(jugadorActual);
             cardLayout.show(panelPrincipal, "MenuJuego");
             btnGuardarPartida.setVisible(false);
-            return;
         }
     }
-
-    private String calcularResultado() {
-        int sumaJugador = calcularSuma(manoJugador);
-        int sumaBanca = calcularSuma(manoBanca);
-
-        if (sumaJugador > 21) {
-            return "Perdió"; // jugador se paso
-        } else if (sumaBanca > 21) {
-            return "Ganó"; // banca se paso
-        } else if (sumaJugador > sumaBanca) {
-            return "Ganó";
-        } else if (sumaJugador == sumaBanca) {
-            return "Empate";
-        } else {
-            return "Perdió";
-        }
-    }
-
+    
     // Calculo de total de puntos
     private int calcularSuma(ArrayList<Integer> mano) {
         int suma = 0;
@@ -773,7 +708,7 @@ public class InterfazBlackjack extends JFrame {
             List<Integer> manoJugadorValores = new ArrayList<>(manoJugador);
             List<Integer> manoBancaValores = new ArrayList<>(manoBanca);
 
-            // Guarda la partida completa (este método lo tienes en tu blackjackService o lo puedes integrar)
+            // Guarda la partida completa (este metodo lo tienes en tu blackjackService o lo puedes integrar)
             blackjackService.guardarPartidaCompleta(jugador, dineroCambiado,
                     manoJugadorValores, manoBancaValores, true);
 
@@ -810,9 +745,9 @@ public class InterfazBlackjack extends JFrame {
         }
     }
 
+    // Guardar mano del jugador
     private void guardarManoDelJugador() {
         if (jugadorActual == null || partidaActual == null) {
-            JOptionPane.showMessageDialog(this, "No se ha inicializado el jugador o la partida.");
             return;
         }
 
@@ -840,6 +775,7 @@ public class InterfazBlackjack extends JFrame {
         manoJugadorService.guardarMano(mano);
     }
 
+    // Finalizar partida
     private void finalizarPartida() {
         if (manoActual.getIdCartas().isEmpty()) {
             System.out.println("ERROR: No hay cartas registradas para guardar.");
