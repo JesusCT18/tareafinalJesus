@@ -216,7 +216,7 @@ public class BlackjackService {
     }
 
     // Metodos CRUD para Carta 
-    public class CartaService {
+    public static class CartaService {
 
         private CartaRepositorio cartaRepositorio;
 
@@ -236,8 +236,12 @@ public class BlackjackService {
             return cartaRepositorio.obtenerTodasLasCartas();
         }
 
-        public void actualizarCarta(Carta carta) {
-            cartaRepositorio.actualizarCarta(carta);
+        public void actualizarCarta(int idCarta, int nuevoValor) {
+            Carta carta = cartaRepositorio.obtenerCartaPorId(idCarta);
+            if (carta != null) {
+                carta.setValor(nuevoValor);
+                cartaRepositorio.actualizarCarta(carta);
+            }
         }
 
         public void eliminarCarta(int id) {
@@ -248,18 +252,18 @@ public class BlackjackService {
             cartaRepositorio.cerrar();
         }
 
-        // Metodos para Operaciones con Cartas Aleatorias 
+        // Métodos para obtener cartas aleatorias
         public Carta obtenerCartaAleatoria() {
-            EntityManager em = cartaRepositorio.getEntityManager();
-            Query query = em.createNativeQuery("SELECT * FROM Cartas ORDER BY RAND() LIMIT 1", Carta.class);
-            return (Carta) query.getSingleResult();
+            List<Carta> cartas = obtenerTodasLasCartas();
+            if (cartas.isEmpty()) {
+                return null;
+            }
+            return cartas.get((int) (Math.random() * cartas.size()));
         }
 
         public List<Carta> obtenerCartasAleatorias(int cantidad) {
-            EntityManager em = cartaRepositorio.getEntityManager();
-            Query query = em.createNativeQuery("SELECT * FROM Cartas ORDER BY RAND() LIMIT :cantidad", Carta.class);
-            query.setParameter("cantidad", cantidad);
-            return query.getResultList();
+            List<Carta> cartas = obtenerTodasLasCartas();
+            return cartas.subList(0, Math.min(cantidad, cartas.size()));
         }
     }
 

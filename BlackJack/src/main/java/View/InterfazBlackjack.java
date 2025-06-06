@@ -37,6 +37,7 @@ public class InterfazBlackjack extends JFrame {
     private JCheckBox chkMostrarContraseñaRegistro;
 
     // Componentes juego
+    private JPanel panelBotones;
     private ManoJugador manoActual;
     private Jugador jugadorActual;
     private Partida partidaActual;
@@ -82,7 +83,6 @@ public class InterfazBlackjack extends JFrame {
     }
 
     // ---Creacion de Menus con sus contenidos---
-    
     // Menu inicial con opciones Iniciar Sesion, Registrarse y Salir
     private void crearMenuInicio() {
         // Se carga el GIF de fondo "fondo1.gif" y se crea el panel auxiliar para el fondo.
@@ -261,46 +261,33 @@ public class InterfazBlackjack extends JFrame {
         backgroundPanel.setLayout(new BorderLayout());
 
         // Se crea el panel original (con GridLayout) para los botones y se configura como transparente
-        JPanel menuJuego = new JPanel(new GridLayout(3, 1, 10, 10));
+        JPanel menuJuego = new JPanel(new GridLayout(4, 1, 10, 10));
         menuJuego.setOpaque(false);
 
         // Se crean los botones
         btnNuevaPartida = new JButton("Nueva Partida");
         btnContinuar = new JButton("Continuar Partida");
+        JButton btnGestorCartas = new JButton("Gestión de Cartas");  // Nuevo botón
         btnSalirMenuJuego = new JButton("Salir");
 
-        // Ajustamos el estilo de los botones: fuente grande, texto blanco, sin relleno y con borde semitransparente
+        // Ajuste de estilo de los botones
         Font btnFont = new Font("Arial", Font.BOLD, 36);
-        btnNuevaPartida.setFont(btnFont);
-        btnContinuar.setFont(btnFont);
-        btnSalirMenuJuego.setFont(btnFont);
+        JButton[] botones = {btnNuevaPartida, btnContinuar, btnGestorCartas, btnSalirMenuJuego};
 
-        btnNuevaPartida.setOpaque(false);
-        btnNuevaPartida.setContentAreaFilled(false);
-        btnNuevaPartida.setForeground(Color.WHITE);
-        btnNuevaPartida.setBorder(BorderFactory.createLineBorder(new Color(255, 255, 255, 150), 2));
+        for (JButton btn : botones) {
+            btn.setFont(btnFont);
+            btn.setOpaque(false);
+            btn.setContentAreaFilled(false);
+            btn.setForeground(Color.WHITE);
+            btn.setBorder(BorderFactory.createLineBorder(new Color(255, 255, 255, 150), 2));
+            menuJuego.add(btn);  // Agregamos cada botón en orden
+        }
 
-        btnContinuar.setOpaque(false);
-        btnContinuar.setContentAreaFilled(false);
-        btnContinuar.setForeground(Color.WHITE);
-        btnContinuar.setBorder(BorderFactory.createLineBorder(new Color(255, 255, 255, 150), 2));
-
-        btnSalirMenuJuego.setOpaque(false);
-        btnSalirMenuJuego.setContentAreaFilled(false);
-        btnSalirMenuJuego.setForeground(Color.WHITE);
-        btnSalirMenuJuego.setBorder(BorderFactory.createLineBorder(new Color(255, 255, 255, 150), 2));
-
-        // Se añaden los botones al panel con GridLayout
-        menuJuego.add(btnNuevaPartida);
-        menuJuego.add(btnContinuar);
-        menuJuego.add(btnSalirMenuJuego);
-
-        // Se añade el panel de botones al centro del BackgroundPanel
+        // Se añade el menu de botones al centro del fondo
         backgroundPanel.add(menuJuego, BorderLayout.CENTER);
         panelPrincipal.add(backgroundPanel, "MenuJuego");
 
-        // Lógica sin modificar
-        // Nueva partida: iniciar, mostrar mesa y hacer visible el botón de guardar
+        // Logica sin modificar
         btnNuevaPartida.addActionListener(e -> {
             iniciarNuevaPartida();
             cardLayout.show(panelPrincipal, "MesaJuego");
@@ -308,19 +295,16 @@ public class InterfazBlackjack extends JFrame {
             btnGuardarPartida.setVisible(true);
         });
 
-        // Continuar partida: si existe, actualizar la interfaz y cargar la partida
         btnContinuar.addActionListener(e -> {
             Jugador jugador = blackjackService.buscarJugadorPorNombre(txtUsuarioLogin.getText());
             Partida partidaGuardada = blackjackService.buscarPartidaAbierta(jugador);
 
-            // Si no se encuentra o la partida tiene saldo 0, se redirige de vuelta al menú.
             if (partidaGuardada == null || partidaGuardada.getDineroActual() <= 0) {
                 JOptionPane.showMessageDialog(this, "Tu dinero actual es 0, crea una nueva partida.");
                 cardLayout.show(panelPrincipal, "MenuJuego");
                 return;
             }
 
-            // Si existe partida, se carga normalmente:
             dineroJugador = partidaGuardada.getDineroActual();
             apuestaActual = 0;
 
@@ -328,11 +312,8 @@ public class InterfazBlackjack extends JFrame {
             manoJugador = new ArrayList<>();
             manoBanca = new ArrayList<>();
 
-            // Recorremos todos los registros de ManoJugador que se han cargado.
             for (ManoJugador mano : manos) {
-                // Obtiene la lista de enteros almacenada en la entidad.
                 for (Integer cartaValor : mano.getManoJugador()) {
-                    // Si el valor es mayor a 10, lo transforma a 10.
                     int valorCarta = cartaValor > 10 ? 10 : cartaValor;
                     if (mano.isEs_jugador()) {
                         manoJugador.add(valorCarta);
@@ -353,12 +334,16 @@ public class InterfazBlackjack extends JFrame {
             btnGuardarPartida.setVisible(true);
         });
 
-        // Salir vuelve al menu inicio
+        // Accion del nuevo boton para abrir el gestor de cartas
+        btnGestorCartas.addActionListener(e -> {
+            GestorCartasDialog gestorCartas = new GestorCartasDialog(this);
+            gestorCartas.setVisible(true);
+        });
+
         btnSalirMenuJuego.addActionListener(e -> cardLayout.show(panelPrincipal, "Inicio"));
     }
 
     // ---Creacion de la mesa del juego y sus componentes para que funcione---
-    
     // Pantalla principal del juego: muestra cartas, suma, dinero y botones de accion
     private void crearMesaJuego() {
         // Se carga el GIF de fondo ("/fondo.gif") y se crea un MyBackgroundPanel.
@@ -658,7 +643,7 @@ public class InterfazBlackjack extends JFrame {
             btnGuardarPartida.setVisible(false);
         }
     }
-    
+
     // Calculo de total de puntos
     private int calcularSuma(ArrayList<Integer> mano) {
         int suma = 0;

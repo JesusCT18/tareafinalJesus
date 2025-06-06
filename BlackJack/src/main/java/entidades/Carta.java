@@ -3,28 +3,32 @@ package entidades;
 import java.util.Objects;
 import javax.persistence.*;
 
-@Entity
-@Table(name = "Cartas")
+@Entity // Indica que esta clase es una entidad JPA
+@Table(name = "Cartas") // Nombre de la tabla en la base de datos
 public class Carta {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id_carta")
+    @Id // Indica que este campo es la clave primaria
+    @GeneratedValue(strategy = GenerationType.IDENTITY) // Generacion automatica del ID
+    @Column(name = "id_carta") // Mapeo del campo con la columna 'id_carta'
     private int id_carta;
 
-    @Column(name = "nombre", nullable = false)
+    @Column(name = "nombre", nullable = false) // Campo 'nombre' no puede ser nulo
     private String nombre; // Ejemplo: 'As de Corazones'
 
-    @Column(name = "valor", nullable = false)
+    @Column(name = "valor", nullable = false) // Campo 'valor' no puede ser nulo
     private int valor; // Valor de la carta en el juego
 
+    // Constructor por defecto (necesario para JPA)
     public Carta() {
     }
 
+    // Constructor con parametros
     public Carta(String nombre, int valor) {
         this.nombre = nombre;
         this.valor = valor;
     }
+
+    // Getters y setters
 
     public int getIdCarta() {
         return id_carta;
@@ -50,11 +54,13 @@ public class Carta {
         this.valor = valor;
     }
 
+    // Representacion en texto de la carta
     @Override
     public String toString() {
         return "Carta{" + "idCarta=" + id_carta + ", nombre=" + nombre + ", valor=" + valor + '}';
     }
 
+    // Metodo hashCode para colecciones
     @Override
     public int hashCode() {
         int hash = 7;
@@ -64,6 +70,7 @@ public class Carta {
         return hash;
     }
 
+    // Metodo equals para comparar dos cartas
     @Override
     public boolean equals(Object obj) {
         if (this == obj) {

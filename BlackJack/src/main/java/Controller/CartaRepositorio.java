@@ -7,84 +7,85 @@ import java.util.List;
 public class CartaRepositorio {
 
     private EntityManagerFactory emf;
-    private EntityManager em;
 
     public CartaRepositorio() {
         emf = Persistence.createEntityManagerFactory("blackjackPU");
-        em = emf.createEntityManager();
     }
-    
-    // Metodo publico para obtener el EntityManager, requerido para consultas nativas
-    public EntityManager getEntityManager() {
-        return em;
+
+    private EntityManager getEntityManager() {
+        return emf.createEntityManager();
     }
 
     // Crear una carta
     public void crearCarta(Carta carta) {
+        EntityManager em = getEntityManager();
         EntityTransaction tx = em.getTransaction();
         try {
             tx.begin();
             em.persist(carta);
             tx.commit();
         } catch (Exception e) {
-            if (tx.isActive()) {
-                tx.rollback();
-            }
+            if (tx.isActive()) tx.rollback();
             throw e;
+        } finally {
+            em.close();
         }
     }
 
-    // Leer una carta por su ID (por ejemplo, id_carta)
+    // Obtener una carta por ID
     public Carta obtenerCartaPorId(int id) {
-        return em.find(Carta.class, id);
+        EntityManager em = getEntityManager();
+        Carta carta = em.find(Carta.class, id);
+        em.close();
+        return carta;
     }
 
-    // Leer todas las cartas
+    // Obtener todas las cartas
     public List<Carta> obtenerTodasLasCartas() {
+        EntityManager em = getEntityManager();
         TypedQuery<Carta> query = em.createQuery("SELECT c FROM Carta c", Carta.class);
-        return query.getResultList();
+        List<Carta> cartas = query.getResultList();
+        em.close();
+        return cartas;
     }
 
     // Actualizar una carta existente
     public void actualizarCarta(Carta carta) {
+        EntityManager em = getEntityManager();
         EntityTransaction tx = em.getTransaction();
         try {
             tx.begin();
             em.merge(carta);
             tx.commit();
         } catch (Exception e) {
-            if (tx.isActive()) {
-                tx.rollback();
-            }
+            if (tx.isActive()) tx.rollback();
             throw e;
+        } finally {
+            em.close();
         }
     }
 
     // Eliminar una carta por su ID
     public void eliminarCarta(int id) {
+        EntityManager em = getEntityManager();
         EntityTransaction tx = em.getTransaction();
         try {
             tx.begin();
             Carta carta = em.find(Carta.class, id);
-            if (carta != null) {
-                em.remove(carta);
-            }
+            if (carta != null) em.remove(carta);
             tx.commit();
         } catch (Exception e) {
-            if (tx.isActive()) {
-                tx.rollback();
-            }
+            if (tx.isActive()) tx.rollback();
             throw e;
+        } finally {
+            em.close();
         }
     }
 
-    // Cerrar las conexiones al EntityManager y EntityManagerFactory
     public void cerrar() {
-        if (em != null && em.isOpen()) {
-            em.close();
-        }
         if (emf != null && emf.isOpen()) {
             emf.close();
         }
     }
 }
+

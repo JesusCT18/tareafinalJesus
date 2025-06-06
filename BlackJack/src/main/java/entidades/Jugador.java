@@ -4,44 +4,38 @@ import entidades.Partida;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import javax.persistence.CascadeType;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.OneToMany;
-import javax.persistence.Table;
+import javax.persistence.*;
 
-@Entity
-@Table(name = "Jugadores")
+@Entity // Indica que esta clase es una entidad JPA
+@Table(name = "Jugadores") // Define el nombre de la tabla en la base de datos
 public class Jugador {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id // Clave primaria
+    @GeneratedValue(strategy = GenerationType.IDENTITY) // El valor se genera automaticamente
     @Column(name = "id_jugador")
     private Integer idJugador;
 
-    @Column(nullable = false)
+    @Column(nullable = false) // Campo obligatorio
     private String nombre;
 
-    @Column(nullable = false)
-    private String contraseña;
+    @Column(nullable = false) // Campo obligatorio
+    private String contraseña; // Clave del jugador
 
-    @Column(nullable = false)
-    private int dinero;
+    @Column(nullable = false) // Campo obligatorio
+    private int dinero; // Dinero actual del jugador
 
+    // Relacion uno a muchos con la entidad Partida
+    // Un jugador puede tener muchas partidas
     @OneToMany(mappedBy = "jugador", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<Partida> partidas;
 
     // Constructor vacio requerido por JPA
     public Jugador() {
         this.dinero = 100; // Valor por defecto inicial
-        this.partidas = new ArrayList<>(); // inicializa lista para evitar NullPointerException
+        this.partidas = new ArrayList<>(); // Inicializa la lista para evitar errores nulos
     }
 
-    // Constructor con parámetros (sin id, porque se genera automáticamente)
+    // Constructor con parametros (sin ID porque se genera automaticamente)
     public Jugador(String nombre, String contraseña, int dinero) {
         this.nombre = nombre;
         this.contraseña = contraseña;
@@ -49,6 +43,7 @@ public class Jugador {
     }
 
     // Getters y Setters
+
     public int getIdJugador() {
         return idJugador;
     }
@@ -89,11 +84,13 @@ public class Jugador {
         this.partidas = partidas;
     }
 
+    // Representacion en texto del objeto Jugador
     @Override
     public String toString() {
-        return "Jugador{" + "idJugador=" + idJugador + ", nombre=" + nombre + ", contrase\u00f1a=" + contraseña + ", dinero=" + dinero + ", partidas=" + partidas + '}';
+        return "Jugador{" + "idJugador=" + idJugador + ", nombre=" + nombre + ", contraseña=" + contraseña + ", dinero=" + dinero + ", partidas=" + partidas + '}';
     }
 
+    // Metodo hashCode para identificar objetos unicos
     @Override
     public int hashCode() {
         int hash = 5;
@@ -105,6 +102,7 @@ public class Jugador {
         return hash;
     }
 
+    // Metodo equals para comparar dos objetos Jugador
     @Override
     public boolean equals(Object obj) {
         if (this == obj) {
@@ -132,3 +130,4 @@ public class Jugador {
         return Objects.equals(this.partidas, other.partidas);
     }
 }
+

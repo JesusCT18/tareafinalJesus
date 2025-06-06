@@ -7,45 +7,53 @@ import java.util.List;
 import java.util.Objects;
 import javax.persistence.*;
 
-@Entity
-@Table(name = "ManoJugador")
+@Entity // Declara que esta clase es una entidad de persistencia
+@Table(name = "ManoJugador") // Asocia esta entidad con la tabla "ManoJugador"
 public class ManoJugador {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id // Clave primaria
+    @GeneratedValue(strategy = GenerationType.IDENTITY) // Generacion automatica del ID
     @Column(name = "id_mano")
     private int id_mano;
 
-    @ManyToOne(optional = false)
-    @JoinColumn(name = "id_jugador", nullable = false)
+    @ManyToOne(optional = false) // Relacion muchos a uno con Jugador
+    @JoinColumn(name = "id_jugador", nullable = false) // Clave foranea
     private Jugador jugador;
 
-    @ManyToOne(optional = false)
-    @JoinColumn(name = "id_partida", nullable = false)
+    @ManyToOne(optional = false) // Relacion muchos a uno con Partida
+    @JoinColumn(name = "id_partida", nullable = false) // Clave foranea
     private Partida partida;
 
-    // Eliminamos el anterior "Carta carta;" y definimos una colección:
+    // Lista de IDs de cartas asociadas a esta mano
+    // Usa un convertidor para guardar la lista como una cadena en la BD
     @Column(name = "id_carta", length = 255)
     @Convert(converter = Controller.IntegerListConverter.class)
     private List<Integer> idCartas = new ArrayList<>();
 
+    // Valores individuales de las cartas en la mano
+    // Se mapea a una tabla secundaria
     @ElementCollection
     @CollectionTable(name = "mano_jugador_valores", joinColumns = @JoinColumn(name = "id_mano"))
     @Column(name = "valor")
     private List<Integer> manoJugador = new ArrayList<>();
 
+    // Indica si esta mano pertenece al jugador (true) o a la banca (false)
     @Column(name = "es_jugador", nullable = false)
     private boolean es_jugador;
 
+    // Constructor vacio requerido por JPA
     public ManoJugador() {
     }
 
+    // Constructor con parametros
     public ManoJugador(int id_mano, Jugador jugador, Partida partida, boolean es_jugador) {
         this.id_mano = id_mano;
         this.jugador = jugador;
         this.partida = partida;
         this.es_jugador = es_jugador;
     }
+
+    // Getters y Setters
 
     public int getId_mano() {
         return id_mano;
@@ -95,11 +103,13 @@ public class ManoJugador {
         this.es_jugador = es_jugador;
     }
 
+    // Metodo para mostrar la informacion de la instancia como texto
     @Override
     public String toString() {
         return "ManoJugador{" + "id_mano=" + id_mano + ", jugador=" + jugador + ", partida=" + partida + ", idCartas=" + idCartas + ", manoJugador=" + manoJugador + ", es_jugador=" + es_jugador + '}';
     }
 
+    // Metodo hashCode para comparar objetos por su contenido
     @Override
     public int hashCode() {
         int hash = 3;
@@ -112,6 +122,7 @@ public class ManoJugador {
         return hash;
     }
 
+    // Metodo equals para verificar si dos objetos ManoJugador son iguales
     @Override
     public boolean equals(Object obj) {
         if (this == obj) {
@@ -143,3 +154,4 @@ public class ManoJugador {
     }
 
 }
+
