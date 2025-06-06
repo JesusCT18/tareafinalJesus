@@ -236,11 +236,12 @@ public class BlackjackService {
             return cartaRepositorio.obtenerTodasLasCartas();
         }
 
-        public void actualizarCarta(int idCarta, int nuevoValor) {
+        public void actualizarCarta(int idCarta, String nuevoNombre, int nuevoValor) {
             Carta carta = cartaRepositorio.obtenerCartaPorId(idCarta);
             if (carta != null) {
-                carta.setValor(nuevoValor);
-                cartaRepositorio.actualizarCarta(carta);
+                carta.setNombre(nuevoNombre);  // Ahora permite cambiar el nombre
+                carta.setValor(nuevoValor);  // Tambien permite cambiar el valor
+                cartaRepositorio.actualizarCarta(carta);  // Guarda los cambios
             }
         }
 

@@ -7,6 +7,7 @@ import java.awt.*;
 import java.util.List;
 
 public class GestorCartasDialog extends JDialog {
+
     // Servicio que maneja la logica de acceso a datos de cartas
     private CartaService cartaService;
     private DefaultListModel<String> modeloLista; // Modelo para la lista de cartas
@@ -16,7 +17,7 @@ public class GestorCartasDialog extends JDialog {
         // Configura el dialogo modal con titulo
         super(parent, "Gestion de Cartas", true);
         cartaService = new CartaService();
-        
+
         setSize(400, 500); // Tamano de la ventana
         setLayout(new BorderLayout()); // Layout principal
         setLocationRelativeTo(parent); // Centrado respecto al padre
@@ -29,7 +30,7 @@ public class GestorCartasDialog extends JDialog {
         // Panel con scroll para la lista
         JScrollPane scrollPane = new JScrollPane(listaCartas);
         add(scrollPane, BorderLayout.CENTER);
-        
+
         // Panel para los botones
         JPanel panelBotones = new JPanel();
         panelBotones.setLayout(new FlowLayout());
@@ -79,14 +80,46 @@ public class GestorCartasDialog extends JDialog {
     // Metodo para actualizar el valor de una carta existente
     private void actualizarCarta() {
         String idCartaStr = JOptionPane.showInputDialog(this, "Ingrese el ID de la carta a actualizar:");
-        String nuevoValorStr = JOptionPane.showInputDialog(this, "Ingrese el nuevo valor:");
+
         try {
             int idCarta = Integer.parseInt(idCartaStr);
-            int nuevoValor = Integer.parseInt(nuevoValorStr);
-            cartaService.actualizarCarta(idCarta, nuevoValor); // Actualiza el valor
-            actualizarListaCartas(); // Refresca la lista
+            Carta carta = cartaService.obtenerCartaPorId(idCarta);
+
+            if (carta == null) {
+                JOptionPane.showMessageDialog(this, "No se encontró ninguna carta con ese ID.");
+                return;
+            }
+
+            // Preguntar al usuario si quiere modificar el nombre
+            String nuevoNombre = JOptionPane.showInputDialog(this, "Nombre actual: " + carta.getNombre()
+                    + "\nSi quieres cambiarlo, escribe el nuevo nombre.\nSi quieres dejarlo igual, deja el campo vacío y presiona Aceptar.");
+
+            // Si el usuario deja el campo en blanco, mantiene el nombre actual
+            if (nuevoNombre == null || nuevoNombre.trim().isEmpty()) {
+                nuevoNombre = carta.getNombre();
+            }
+
+            // Preguntar por el nuevo valor de la carta
+            String nuevoValorStr = JOptionPane.showInputDialog(this, "Valor actual: " + carta.getValor()
+                    + "\nIngrese el nuevo valor.\nSi quieres dejarlo igual, deja el campo vacío y presiona Aceptar.");
+
+            int nuevoValor;
+            if (nuevoValorStr == null || nuevoValorStr.trim().isEmpty()) {
+                nuevoValor = carta.getValor(); // Mantiene el valor actual si no introduce nada
+            } else {
+                nuevoValor = Integer.parseInt(nuevoValorStr);
+            }
+
+            // Se actualiza la carta con los nuevos valores
+            carta.setNombre(nuevoNombre);
+            carta.setValor(nuevoValor);
+            cartaService.actualizarCarta(idCarta, nuevoNombre, nuevoValor);
+
+            JOptionPane.showMessageDialog(this, "Carta actualizada correctamente.");
+            actualizarListaCartas();
+
         } catch (NumberFormatException ex) {
-            JOptionPane.showMessageDialog(this, "Datos invalidos.");
+            JOptionPane.showMessageDialog(this, "Datos inválidos. Asegúrate de ingresar un número válido para el ID y el valor.");
         }
     }
 
@@ -102,6 +135,3 @@ public class GestorCartasDialog extends JDialog {
         }
     }
 }
-
-
-
